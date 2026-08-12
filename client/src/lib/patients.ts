@@ -394,10 +394,10 @@ export const levels: Level[] = [
         gcs: { score: 10, note: "Drowsy post-ictal state, no structural lesion on CT" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
-        action: "surv",
+        action: "none",
         explanation:
-          "Surveillance: a witnessed seizure with depressed consciousness puts the patient in the GCS ≤ 12 cohort. No alert yet (GCS 10, no structural injury). Reassess — if GCS drops to 7 or a structural lesion appears, escalate.",
-        ruleCited: "GCS ≤ 12 surveillance cohort — reassess",
+          "No alert. A post-ictal seizure without a structural lesion does not match Alert Logic v1.0's curated neurologic-injury source terms. Drowsiness is medication/seizure-related and expected to clear — document and reassess, but no EMR-DAS trigger applies.",
+        ruleCited: "No qualifying source term in Alert Logic v1.0 list",
       },
     ],
   },

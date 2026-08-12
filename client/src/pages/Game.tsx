@@ -42,7 +42,7 @@ export default function Game() {
     correctAction: Action;
   } | null>(null);
   const [chosen, setChosen] = useState<string | null>(null);
-  const answered = lastAnswer?.patientId === currentPatient.id;
+  const answered = !!lastAnswer && lastAnswer.patientId === currentPatient.id;
 
   const handleAction = (value: string) => {
     if (answered) return;
@@ -79,9 +79,9 @@ export default function Game() {
             <span className="font-telemetry text-xs text-muted-foreground">
               CASE {patientIndex + 1}/10
             </span>
-            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => window.location.hash = "#abort"}>
-              <Home className="h-4 w-4" />
-            </Button>
+          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => { if (window.confirm("Abort this shift? Your progress on this level will be lost.")) { window.location.hash = "#home"; } }}>
+            <Home className="h-4 w-4" />
+          </Button>
           </div>
         </div>
         {/* progress bar */}

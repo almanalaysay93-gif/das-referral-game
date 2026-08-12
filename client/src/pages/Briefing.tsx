@@ -8,7 +8,7 @@ import { levels } from "@/lib/patients";
 import { ArrowRight, ArrowLeft, Target } from "lucide-react";
 
 export default function Briefing() {
-  const { levelIndex, startLevel, goToHome } = useGame();
+  const { levelIndex, beginShift, goToHome } = useGame();
   const level = levels[levelIndex];
 
   return (
@@ -47,7 +47,7 @@ export default function Briefing() {
             <Button
               size="lg"
               className="flex-[2] font-display"
-              onClick={() => startLevel(levelIndex)}
+              onClick={() => beginShift()}
             >
               Begin Shift — Patient 1 <ArrowRight className="ml-1 h-4 w-4" />
             </Button>

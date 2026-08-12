@@ -33,6 +33,7 @@ const STORAGE_KEY = "das-referral-game:v1";
 
 interface GameContextValue extends GameState {
   startLevel: (levelIndex: number) => void;
+  beginShift: () => void;
   submitAnswer: (chosen: string) => { correct: boolean; correctAction: string };
   nextPatient: () => void;
   endLevel: () => void;
@@ -76,27 +77,39 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [state]);
 
+  // Support the abort (home) button in the game header
+  useEffect(() => {
+    const onHash = () => {
+      if (window.location.hash === "#home") {
+        setState((s) => ({ ...s, screen: "home", patientIndex: 0, answers: [] }));
+        window.location.hash = "";
+      }
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
   const startLevel = useCallback((levelIndex: number) => {
     setState((s) => ({ ...s, screen: "briefing", levelIndex, patientIndex: 0, answers: [] }));
   }, []);
 
+  const beginShift = useCallback(() => {
+    setState((s) => ({ ...s, screen: "game", patientIndex: 0, answers: [] }));
+  }, []);
+
   const submitAnswer = useCallback(
     (chosen: string) => {
-      let result = { correct: false, correctAction: "" };
-      setState((s) => {
-        const level = levels[s.levelIndex];
-        const patient = level.patients[s.patientIndex];
-        const correct = chosen === patient.action;
-        result = { correct, correctAction: patient.action };
-        return {
-          ...s,
-          screen: "game",
-          answers: [...s.answers, { patientId: patient.id, correct, chosen }],
-        };
-      });
-      return result;
+      const level = levels[state.levelIndex];
+      const patient = level.patients[state.patientIndex];
+      const correct = chosen === patient.action;
+      setState((s) => ({
+        ...s,
+        screen: "game",
+        answers: [...s.answers, { patientId: patient.id, correct, chosen }],
+      }));
+      return { correct, correctAction: patient.action };
     },
-    [],
+    [state.levelIndex, state.patientIndex],
   );
 
   const nextPatient = useCallback(() => {
@@ -167,6 +180,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const value: GameContextValue = {
     ...state,
     startLevel,
+    beginShift,
     submitAnswer,
     nextPatient,
     endLevel,
