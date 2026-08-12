@@ -34,12 +34,26 @@ export default function GameCanvas({ bridge, levelIndex, demo }: GameCanvasProps
     // Guarantee non-zero render sizes before any scene math runs.
     engine.resize();
 
+    let disposed = false;
     let handle: GameHandle | null = null;
-    createGameScene(engine, canvas, { bridge: bridgeRef.current, levelIndex, demo }).then((h) => {
-      handle = h;
-      engine.resize();
-      engine.runRenderLoop(() => h.scene.render());
-    });
+    createGameScene(engine, canvas, { bridge: bridgeRef.current, levelIndex, demo })
+      .then((h) => {
+        if (disposed) {
+          h.dispose();
+          return;
+        }
+        handle = h;
+        engine.resize();
+        // Keep the render function as a stable named function (never a stale
+        // closure) so a disposed engine can never receive a non-function rAF cb.
+        const renderFn = () => {
+          if (!disposed) h.scene.render();
+        };
+        engine.runRenderLoop(renderFn);
+      })
+      .catch((err) => {
+        console.error("[GameCanvas] scene creation failed", err);
+      });
 
     const onResize = () => engine.resize();
     window.addEventListener("resize", onResize);
@@ -47,6 +61,7 @@ export default function GameCanvas({ bridge, levelIndex, demo }: GameCanvasProps
 
     return () => {
       window.removeEventListener("resize", onResize);
+      disposed = true;
       handle?.dispose();
       engine.dispose();
       startedRef.current = false;

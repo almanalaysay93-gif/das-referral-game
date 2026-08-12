@@ -169,8 +169,10 @@ export class Player {
     }
     this.setFrame(this.showingRun);
 
-    // Facing flip (negative x scale mirrors the sprite)
-    this.spriteFrame.scaling.x = -this.facing;
+    // Facing: both sprites are drawn facing right (+x), so scale.x = +facing
+    // (+1 = right, -1 = mirrored left). No negation — the texture's natural
+    // orientation is the +x direction.
+    this.spriteFrame.scaling.x = this.facing;
   }
 
   /** Swap the material texture between idle and run. Textures are pre-created. */
