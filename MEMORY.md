@@ -479,3 +479,130 @@ One remaining test: mobile playing-phase touch controls (left/right/jump buttons
 Then checkpoint + deliver. Checkpoint message should describe: fixed blank Babylon
 render (bridge ref churn, shader includes + ALPHATEST), bright opaque corridor/floor
 textures, transparent bed & door sprites, visible doctor at start, verified triage flow.
+
+## NEW REQUEST (08:05) — character fix + walk animation
+User screenshot shows doctor character with "missing pixels" (the idle sprite has pixel loss —
+likely from my earlier chroma-key/cleanup or the doctor sprite itself has transparency artifacts
+in hair/shadows). User also wants a WALKING ANIMATION.
+
+Current Player.ts state (read 08:05):
+- Single plane with idle texture swap; `setFrame()` swaps doctorIdle↔doctorRun textures on the
+  SAME plane material (creates NEW Texture each swap — memory leak-ish but works).
+- `cycleT` toggles spriteOn every 0.125s when moving → already a naive 2-frame animation via
+  setFrame? NO — setFrame is NOT called in update()! It only exposes the method. Animation loop
+  exists but is unused.
+- Facing flip via spriteFrame.scaling.x = -facing.
+- assets.ts: doctorIdle=/manus-storage/doctor-idle_036a1ddb.png,
+  doctorRun=/manus-storage/doctor-run_2394e723.png (transparent chibi sprites).
+
+PLAN:
+1. Generate a CLEAN doctor sprite (fix missing pixels): regenerate doctor idle as opaque,
+   crisp pixel-art style without transparency artifacts, and generate 4-frame run cycle
+   (legs swinging: contact, down, passing, up) as ONE sprite sheet OR 4 separate images.
+   Sprite sheet simpler: generate one 4-column strip; use UV scroll/vScale? Actually easiest:
+   4 frames in ONE image horizontally, scroll emissiveTexture.uOffset based on frame index with
+   uScale=0.25 per frame... BUT hasAlpha + ALPHATEST for the sheet works the same way.
+2. In Player.update: advance anim time while moving; switch frame every 0.11s; when idle, use
+   idle frame (frame0 or idle tex); bob the sprite slightly (y wobble) for life.
+3. Keep facing flip; avoid recreating Texture each swap — create all textures at construction,
+   swap material emissiveTexture.
+4. Also check why "missing pixels": the uploaded doctor-idle.png may have had rough alpha edges.
+   New generation will be clean.
+
+Delivery state: live version b211b1a4 published at dasrefgame-dqpu7qh3.manus.space.
+Auto-publish enabled: every checkpoint publishes.
+
+## Sprite assessment (08:06)
+doctor-idle.png (816x1088): clean, crisp vector-style chibi doctor, solid fills, no missing pixels
+visible in the file itself. doctor-run.png (1632x2176): clean mid-run stride pose, solid fills,
+good. => The "missing pixels" in-game are a RENDERING issue (ALPHATEST transparencyMode=1
+cutoff eating semi-transparent antialiasing edge pixels, or uScale/sampling), NOT the art.
+Plan adjustment (no new image generation — daily quota exhausted anyway):
+1. REMOVE transparencyMode ALPHATEST hack from door material?? door needs it. For the DOCTOR:
+   the doctor material never had ALPHATEST set — its "missing pixels" in screenshot were likely
+   the doctor being drawn SMALL (scaled 1.6x1.6*PLAYER_W=2.24 wide) causing the antialiased
+   edge pixels to get dropped or the idle sprite being displayed at low texel density. Actually
+   the screenshot shows doctor at ~60px tall with visible aliasing holes — caused by the magenta
+   chroma-key? doctor-idle was never chroma-keyed; it's the original generated sprite.
+   The holes in screenshot are at hair tips/arm — those areas ARE antialiased semi-transparent
+   pixels in the original sprite; at small display size with standard linear sampling + alpha
+   blending they can pop.
+2. FIX: preprocess doctor-idle/run: harden alpha — fully opaque where alpha>0.4, transparent
+   below 0.15 (feather), keep clean; upscale 2x if needed. Use Python PIL chroma-hardening script.
+3. WALK ANIMATION: alternate doctor-idle and doctor-run frames every 0.12s while moving
+   (setFrame already exists in Player.ts but isn't called — call it from update). Also add
+   subtle vertical bob (±0.08 units at 8Hz) while moving. Pre-create both Textures in Player
+   constructor and swap emissiveTexture/diffuseTexture (avoid creating new Texture per swap).
+   Note: setFrame() was in player file but the material textures must both be swapped.
+4. After edits: navigate /adventure?level=0&v=21, Begin Walk, arrow-right, verify.
+
+## v21 verification (08:31)
+- doctor_crop4.png: the crop from live canvas shows the doctor COMPLETE, no missing pixels,
+  clean hair/coat/shoes. Sprite hardening WORKED (alpha remap script /tmp/harden_doctor.py).
+- BUT the doctor appears UPSIDE-DOWN in the crop (head down, feet up)! That means the
+  sprite plane is flipped incorrectly — likely because spriteFrame.scaling.x = -facing
+  with facing=1 (start facing right) flips the texture vertically?? No — plane default
+  uvs: CreatePlane has uvs with v flipped (BABYLON plane UVs are top-up... actually plane
+  UV v is flipped so texture appears upside down when scaling.y positive with front face
+  culling off?). Fix: set plane's UVs or use `isBackFaceCulled=false` AND flip v via
+  `plane.uvOffset/y` OR just mirror the texture V: `texture.vScale = -1` OR `texture.vOffset = 1`.
+  The idle screenshot earlier (8:29:50) showed doctor RIGHT-SIDE UP at start. After walking
+  right and facing flip, he appears upside down. => the frame swap to run texture may have
+  different UV orientation. doctor-run (1632x2176) vs idle (816x1088) — run tex aspect 0.75
+  idle 0.75 too. Hmm, but idle rendered fine at start? Actually 8:29:50 screenshot shows
+  doctor upright. He walked right -> facing=1 (unchanged) but run frame showing = runTex.
+  => runTex renders upside down. Fix: runTex.vScale = -1 (BABYLON plane UV: texture appears
+  mirrored vertically by default; maybe idle also has vScale=-1 set globally? No — idle fine).
+  SIMPLEST robust fix: bake both textures with same orientation — set idleTex.vScale = -1 too
+  and check; OR mirror the run image vertically with PIL (easier, deterministic).
+  -> Use PIL flip: ImageOps.flip on run sprite BEFORE using. Same for idle if needed after
+  checking. Actually since idle renders upright, the plane UVs are fine; only run differs —
+  but that's impossible unless the run sprite itself was generated upside-down? Looking at
+  doctor-run.png earlier: upright. And idle upright. So why does canvas show run upside down?
+  -> WAIT: maybe the issue is texture.vScale=-1 needed for BOTH but idle was fine because...
+  Check Player.ts plane: standard CreatePlane. BABYLON CreatePlane has flipUV property?
+  The mesh uvs: by default plane uvs map (0,0) top-left; sampling... In practice many 2D setups
+  need vScale=-1. The idle frame at 8:29:50 WAS upright. Hmm — the walk animation had not
+  swapped to run yet in that screenshot (still idle). Then 8:31 crop: run showing, upside down.
+  => runTex renders flipped relative to idleTex?? No — same material, both just textures.
+  => The swap happens only when showingRun. Both share same plane/material/UVs. So BOTH must
+  render the same orientation. The 8:29:50 screenshot may have shown idle upright by luck
+  (camera), or the run is what I see now and idle would also be flipped — the player is
+  walking, so run is always shown. Need check: hold still and see idle orientation.
+  - ALSO NOTE the crop shows patient BEDS upright, doors upright. Only the doctor is flipped.
+  => plane has parent spriteFrame with scaling.x=-1 (facing). Negative scale + front/back face
+  culling disabled: mirroring X does not flip Y. So NOT the cause.
+  => Actual cause likely: texture vScale=-1 applied only... no code sets vScale.
+  => Alternative: the run sprite image is taller-than-wide relative to plane scaling
+  (PLAYER_W*1.6 x PLAYER_H = 2.24 x 2.6) — aspect ratio of run sprite 0.75 matches 2.24/2.6=0.86
+  close. Not flipping.
+  -> DECISION: inspect both orientations programmatically: stop movement, read pixels of idle
+  frame; also try setting texture.vScale = -1 on runTex and see which is correct.
+- Full-frame scan: hair y in [136,673], skin y in [193,942] out of 1100. Doctor spans y=136..~942.
+  Floor should be near y=940+ (doctor stands on floor). hair 136-673 is ABOVE skin 193-942?
+  hair min 136 < skin min 193, hair max 673 < skin max 942 → hair sits above skin → RIGHT-SIDE UP!
+  The upside-down look in crop4 was because the crop region cut through body + bed; the
+  doctor shown was partially cropped and the "head down" interpretation was wrong — the
+  crop4 image actually shows legs at top (y~0 in crop) because crop coords came from the
+  teal scan region. CONCLUSION: sprite orientation is CORRECT. No flip bug.
+  So v21: sprite clean + orientation correct. Only verify idle vs run both fine.
+- crop5 = background (wrong scan: "hair" brown range matched door panels!). Doctor NOT in that
+  region; his hair pixels must be elsewhere. Need scan with a stricter brown (dark hair r50-100
+  g35-70 b30-60) and restrict to non-teal area, or scan for WHITE coat pixels (r>220,g>220,b>220)
+  in the lower band only.
+- Better plan: just take a screenshot of the full viewport (webdev_take_screenshot won't show
+  live movement) — instead use browser_view which returns an annotated screenshot. The screenshot
+  mechanism can't catch animation frames, but idle vs run just need visual sanity: screenshot
+  after pressing ArrowRight once.
+- 08:33 screenshots: doctor idle sprite renders CLEAN, upright, solid fills (no missing pixels).
+  Left press flipped him? He appears facing right in both; key press screenshots likely captured
+  during hold before animation swap (dt tiny). Animation swap happens every 0.11s while moving
+  — screenshots taken instantly after keydown can't catch mid-walk frame. But the 08:30 teal
+  crop (crop3) showed LEGS + shoes at bottom — that was during movement, run frame presumably,
+  rendered upright with clean shoes. Orientation fine.
+- Animation verification: need a live check — e.g., dispatch keydown then wait 0.3s before
+  screenshot to ensure swap occurred.
+- 08:33:47 screenshot: doctor walking right, camera followed, sprite clean and upright.
+  He's mid-corridor, run frame visible (stride pose). All good.
+- Remaining before checkpoint: verify touch buttons still work? They were fine last cycle.
+  Proceed to checkpoint + delivery.

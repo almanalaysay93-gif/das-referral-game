@@ -1,6 +1,9 @@
 // Player.ts — kinematic doctor character for the 2D hospital platformer.
 // Style: flat mission-control sprites (teal scrubs), chibi proportions.
 // Physics: manual kinematic (gravity, AABB vs. floor segments), no physics plugin.
+// Animation: idle sprite when standing; alternates idle/run frames at ~8Hz when
+// walking, with a subtle vertical bob for life. Textures are pre-created once
+// and swapped on the material — never recreated per frame.
 
 import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
@@ -17,6 +20,9 @@ const SPEED = 6.2;
 const GRAVITY = -26;
 const JUMP_V = 11.5;
 
+const ANIM_FRAME_TIME = 0.11; // seconds per walk frame (≈9fps cycle)
+const BOB_AMP = 0.09; // world units of vertical bob while walking
+
 export interface Rect {
   x: number;
   y: number;
@@ -32,9 +38,10 @@ export class Player {
   private vy = 0;
   private onGround = false;
   private plane: import("@babylonjs/core/Meshes").Mesh;
-  private cycleT = 0;
-  private spriteOn = true; // toggled each cycle for run animation
-  private frameIdx = 0;
+  private idleTex: Texture;
+  private runTex: Texture;
+  private animT = 0;
+  private showingRun = false;
   readonly yFloor: number;
 
   constructor(
@@ -51,21 +58,25 @@ export class Player {
     this.spriteFrame = new TransformNode("playerSprite", scene);
     this.spriteFrame.parent = this.root;
 
-    const idleMat = new StandardMaterial("playerIdleMat", scene);
-    const idleTex = new Texture(ASSETS.doctorIdle, scene);
-    idleTex.hasAlpha = true;
-    idleMat.diffuseTexture = idleTex;
-    idleMat.emissiveTexture = idleTex;
-    idleMat.emissiveColor.setAll(1);
-    idleMat.specularColor.setAll(0);
-    idleMat.disableLighting = true;
-    idleMat.backFaceCulling = false;
-    const idle = CreatePlane("playerPlane", { size: 1, updatable: true }, scene);
-    idle.scaling.set(PLAYER_W * 1.6, PLAYER_H, 1);
-    idle.material = idleMat;
-    idle.parent = this.spriteFrame;
-    idle.position.z = -0.1;
-    this.plane = idle;
+    // Pre-create both textures ONCE (no Texture allocation during gameplay).
+    this.idleTex = new Texture(ASSETS.doctorIdle, scene);
+    this.idleTex.hasAlpha = true;
+    this.runTex = new Texture(ASSETS.doctorRun, scene);
+    this.runTex.hasAlpha = true;
+
+    const mat = new StandardMaterial("playerMat", scene);
+    mat.diffuseTexture = this.idleTex;
+    mat.emissiveTexture = this.idleTex;
+    mat.emissiveColor.setAll(1);
+    mat.specularColor.setAll(0);
+    mat.disableLighting = true;
+    mat.backFaceCulling = false;
+    const plane = CreatePlane("playerPlane", { size: 1, updatable: true }, scene);
+    plane.scaling.set(PLAYER_W * 1.6, PLAYER_H, 1);
+    plane.material = mat;
+    plane.parent = this.spriteFrame;
+    plane.position.z = -0.1;
+    this.plane = plane;
   }
 
   get rect(): Rect {
@@ -83,11 +94,14 @@ export class Player {
     this.vx = 0;
     this.vy = 0;
     this.onGround = false;
+    this.animT = 0;
+    this.showingRun = false;
   }
 
   update(dt: number, input: InputState, worldMaxX: number, dialogOpen: () => boolean) {
     if (dialogOpen()) {
       this.vx = 0;
+      this.setFrame(false); // idle while talking
       return;
     }
 
@@ -115,11 +129,10 @@ export class Player {
     if (this.vy < -20) this.vy = -20;
 
     // Integrate
-    let nx = this.root.position.x + this.vx * dt;
     const ny = this.root.position.y + this.vy * dt;
 
     // AABB vs floor segments
-    this.root.position.x = nx;
+    this.root.position.x += this.vx * dt;
     this.root.position.y = ny;
     this.onGround = false;
 
@@ -141,32 +154,33 @@ export class Player {
     if (this.root.position.x < PLAYER_W / 2) this.root.position.x = PLAYER_W / 2;
     if (this.root.position.x > maxX) this.root.position.x = maxX;
 
-    // Run animation: toggle sprite at ~8Hz when moving on ground
+    // Walk animation: alternate idle/run frames at ~9fps while walking on ground
     if (moving && this.onGround) {
-      this.cycleT += dt;
-      if (this.cycleT > 0.125) {
-        this.cycleT = 0;
-        this.spriteOn = !this.spriteOn;
-        this.frameIdx = this.spriteOn ? 0 : 1;
+      this.animT += dt;
+      if (this.animT >= ANIM_FRAME_TIME) {
+        this.animT = 0;
+        this.showingRun = !this.showingRun;
       }
+      // Subtle stride bob at twice the frame rate
+      this.spriteFrame.position.y = BOB_AMP * Math.sin((this.animT / ANIM_FRAME_TIME + (this.showingRun ? 0.5 : 0)) * Math.PI * 2);
     } else {
-      this.spriteOn = true;
-      this.frameIdx = 0;
+      this.showingRun = false;
+      this.spriteFrame.position.y = 0;
     }
+    this.setFrame(this.showingRun);
 
-    // Facing flip
+    // Facing flip (negative x scale mirrors the sprite)
     this.spriteFrame.scaling.x = -this.facing;
   }
 
-  /** Set sprite to idle or run frame (call after scene textures loaded). */
-  setFrame(frame: "idle" | "run") {
-    // Swap the texture on the existing plane.
+  /** Swap the material texture between idle and run. Textures are pre-created. */
+  private setFrame(run: boolean) {
     if (!this.plane || !this.plane.material) return;
     const mat = this.plane.material as StandardMaterial;
-    const newTex = new Texture(frame === "idle" ? ASSETS.doctorIdle : ASSETS.doctorRun, this.spriteFrame.getScene());
-    newTex.hasAlpha = true;
-    mat.diffuseTexture = newTex;
-    mat.emissiveTexture = newTex;
+    const tex = run ? this.runTex : this.idleTex;
+    if (mat.diffuseTexture === tex) return;
+    mat.diffuseTexture = tex;
+    mat.emissiveTexture = tex;
   }
 
   dispose() {

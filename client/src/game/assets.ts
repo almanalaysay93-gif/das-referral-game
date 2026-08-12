@@ -2,8 +2,8 @@
 
 export const ASSETS = {
   reference: "/manus-storage/platformer-reference_f291154e.png",
-  doctorIdle: "/manus-storage/doctor-idle_036a1ddb.png",
-  doctorRun: "/manus-storage/doctor-run_2394e723.png",
+  doctorIdle: "/manus-storage/doctor-idle-hard_0ae1e752.png",
+  doctorRun: "/manus-storage/doctor-run-hard_bc0a4ae6.png",
   corridor: "/manus-storage/corridor-bright_06cf51af.png",
   bedA: "/manus-storage/bed-transparent_202bb527.png",
   bedB: "/manus-storage/bed-transparent_202bb527.png",
