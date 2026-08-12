@@ -3,6 +3,7 @@
  * Dark telemetry base, amber beacon accents, asymmetric console layout.
  */
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import { useGame } from "@/contexts/GameContext";
 import { levels } from "@/lib/patients";
 import {
@@ -51,6 +52,7 @@ function ConsoleHeading({ n, label, title }: { n: string; label: string; title: 
 export default function Home() {
   const { goToHome, startLevel, isLevelUnlocked, bestScores, resetProgress } = useGame();
   void goToHome;
+  const [, navigate] = useLocation();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -111,7 +113,15 @@ export default function Home() {
               <Button
                 size="lg"
                 variant="outline"
-                className="font-display text-base w-full md:w-auto md:px-8 bg-card/40 h-12"
+                className="font-display text-base w-full md:w-auto md:px-8 bg-card/40 h-12 border-telemetry/50 text-telemetry"
+                onClick={() => navigate("/adventure")}
+              >
+                🏥 2D Hospital Adventure — Walk the Ward <Activity className="ml-1 h-4 w-4" />
+              </Button>
+              <Button
+                size="lg"
+                variant="ghost"
+                className="font-display text-sm w-full md:w-auto md:px-8 h-10 text-muted-foreground"
                 onClick={() => document.getElementById("levels")?.scrollIntoView({ behavior: "smooth" })}
               >
                 View Missions
@@ -121,8 +131,48 @@ export default function Home() {
         </div>
       </section>
 
-      <StatusStrip />
+      {/* ── Hospital Adventure banner ── */}
+      <section className="relative border-b border-border overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-40"
+          style={{ backgroundImage: "url(/manus-storage/platformer-reference_f291154e.png)" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/60" />
+        <div className="container relative py-10">
+          <div className="grid gap-6 md:grid-cols-[1.4fr_1fr] items-center">
+            <div>
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 font-telemetry text-[10px] uppercase tracking-[0.2em] text-telemetry">
+                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                New Mode — Platformer Training
+              </div>
+              <h2 className="font-display text-2xl md:text-4xl font-bold">
+                Walk the ward yourself. <span className="text-primary">Room to room.</span>
+              </h2>
+              <p className="mt-2 max-w-xl text-sm md:text-base text-muted-foreground leading-relaxed">
+                The same EMR-DAS rules, a different posture: you are now the
+                doctor on the night shift, running the corridor, knocking on
+                doors, and finding every patient the alert filter flagged —
+                then classifying each one correctly to advance to the next
+                floor.
+              </p>
+              <div className="mt-5 flex gap-3">
+                <Button size="lg" className="font-display h-11" onClick={() => navigate("/adventure?level=0")}>
+                  Enter the Ward <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="hidden md:block panel rounded-lg overflow-hidden border border-border">
+              <img
+                src="/manus-storage/platformer-reference_f291154e.png"
+                alt="Hospital corridor at night, the setting of the adventure mode"
+                className="w-full h-44 object-cover"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
 
+      <StatusStrip />
       {/* ── Triage flow console band (workflow strip from the doc's Figure 1) ── */}
       <section className="border-b border-border bg-card/40">
         <div className="container py-12">

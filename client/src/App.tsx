@@ -7,6 +7,7 @@ import { GameProvider, useGame } from "./contexts/GameContext";
 import Briefing from "./pages/Briefing";
 import Game from "./pages/Game";
 import Home from "./pages/Home";
+import Adventure from "./pages/Adventure";
 import Result from "./pages/Result";
 
 function Router() {
@@ -19,6 +20,7 @@ function Router() {
          screen === "result" ? <Result /> :
          <Home />}
       </Route>
+      <Route path={"/adventure"} component={Adventure} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
