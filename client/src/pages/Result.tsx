@@ -51,16 +51,18 @@ export default function Result() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10">
       <div className="slide-in max-w-2xl w-full space-y-5">
-        <div className="panel rounded-xl p-8 border-t-2 border-t-primary">
+        <div className="panel rounded-xl p-6 md:p-8 border-t-2 border-t-primary">
           <div className="font-telemetry text-xs uppercase tracking-[0.25em] text-telemetry">
             Shift Report — Level {level.id}
           </div>
           <div className="mt-2 font-display text-3xl font-bold">{level.name}</div>
 
-          <div className="mt-6 flex items-end gap-4">
-            <div className="font-telemetry text-6xl font-bold text-primary">{score}</div>
-            <div className="font-telemetry text-xl text-muted-foreground pb-1">/ {level.patients.length}</div>
-            <div className={`ml-auto font-display font-bold text-sm ${grade.color}`}>{grade.label}</div>
+          <div className="mt-6 flex flex-col gap-3">
+            <div className="flex items-end gap-4">
+              <div className="font-telemetry text-6xl font-bold text-primary">{score}</div>
+              <div className="font-telemetry text-xl text-muted-foreground pb-1">/ {level.patients.length}</div>
+            </div>
+            <div className={`font-display font-bold text-sm ${grade.color}`}>{grade.label}</div>
           </div>
 
           <div className="mt-6 h-px bg-border" />
@@ -101,22 +103,22 @@ export default function Result() {
             })}
           </div>
 
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            <Button variant="outline" onClick={goToHome} className="flex-1 bg-card/40">
+          <div className="mt-6 flex flex-col gap-3">
+            <Button variant="outline" onClick={goToHome} className="w-full bg-card/40 h-11">
               <Home className="mr-1 h-4 w-4" /> Return to Console
             </Button>
             {!passed && (
-              <Button className="flex-1 font-display" onClick={() => startLevel(levelIndex)}>
+              <Button className="w-full font-display h-12" onClick={() => startLevel(levelIndex)}>
                 Retrain — Retry Level {level.id}
               </Button>
             )}
             {passed && !isLast && (
-              <Button className="flex-1 font-display" onClick={() => startLevel(levelIndex + 1)}>
+              <Button className="w-full font-display h-12" onClick={() => startLevel(levelIndex + 1)}>
                 Next Mission — Level {levelIndex + 2} <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
             )}
             {passed && isLast && (
-              <Button className="flex-1 font-display" onClick={goToHome}>
+              <Button className="w-full font-display h-12" onClick={goToHome}>
                 <Star className="mr-1 h-4 w-4 text-primary" /> Complete — Back to Console
               </Button>
             )}

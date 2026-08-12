@@ -186,6 +186,25 @@
     font-family: "Space Grotesk", sans-serif;
   }
 
+  /* Phone-first touch helpers */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Prevent bounce overscroll on mobile game screen */
+  html,
+  body {
+    overscroll-behavior-y: contain;
+  }
+
   .font-telemetry {
     font-family: "JetBrains Mono", monospace;
   }

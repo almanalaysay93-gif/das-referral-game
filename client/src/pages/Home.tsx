@@ -20,7 +20,7 @@ const LOGO = "/manus-storage/das-logo_13aa1dbe.png";
 /** Small telemetry status-strip row shared across the console sections */
 function StatusStrip() {
   return (
-    <div className="flex items-center gap-4 border-y border-border bg-card/30 px-4 py-1.5 font-telemetry text-[10px] uppercase tracking-[0.2em] text-muted-foreground overflow-x-auto whitespace-nowrap">
+    <div className="flex items-center gap-4 border-y border-border bg-card/30 px-4 py-2 font-telemetry text-[10px] uppercase tracking-[0.2em] text-muted-foreground overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden">
       <span className="flex items-center gap-1.5">
         <span className="h-1.5 w-1.5 rounded-full bg-success" /> HIS LINK: OK
       </span>
@@ -56,8 +56,8 @@ export default function Home() {
     <div className="min-h-screen flex flex-col">
       {/* ── Top rail ── */}
       <header className="border-b border-border bg-card/60 backdrop-blur-md sticky top-0 z-40">
-        <div className="container flex items-center gap-3 py-3">
-          <img src={LOGO} alt="EMR-DAS radar emblem" className="h-10 w-10" />
+        <div className="container flex items-center gap-3 py-2.5">
+          <img src={LOGO} alt="EMR-DAS radar emblem" className="h-9 w-9 md:h-10 md:w-10" />
           <div className="leading-tight">
             <div className="font-display text-lg font-bold tracking-tight">
               EMR-<span className="text-primary">DAS</span>
@@ -66,17 +66,14 @@ export default function Home() {
               Donor Alert Simulator · SPMC
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 font-telemetry text-[10px] uppercase tracking-widest text-primary">
-              <Radar className="h-3 w-3" /> Alert Logic v1.0 Online
-            </span>
+          <div className="ml-auto flex items-center gap-1.5">
             <Button
               variant="ghost"
               size="sm"
               onClick={resetProgress}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground hover:text-foreground h-9"
             >
-              <Undo2 className="h-3.5 w-3.5 mr-1" /> Reset
+              <Undo2 className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">Reset</span>
             </Button>
           </div>
         </div>
@@ -89,32 +86,32 @@ export default function Home() {
           style={{ backgroundImage: `url(${HERO})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
-        <div className="container relative py-20 md:py-28 max-w-5xl">
+        <div className="container relative py-14 md:py-28 max-w-5xl">
           <div className="slide-in">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 font-telemetry text-[10px] uppercase tracking-[0.2em] text-telemetry">
               <span className="h-1.5 w-1.5 rounded-full bg-telemetry animate-pulse" />
               Triage Console — Live Simulation
             </div>
-            <h1 className="font-display text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight">
+            <h1 className="font-display text-[2.25rem] md:text-6xl font-bold leading-[1.05] tracking-tight">
               Every missed referral is a life
               <br />
               a family never got to <span className="text-primary">save</span>.
             </h1>
-            <p className="mt-5 max-w-2xl text-base md:text-lg text-muted-foreground leading-relaxed">
+            <p className="mt-4 max-w-2xl text-sm md:text-lg text-muted-foreground leading-relaxed">
               You are the operator of the Electronic Medical Record–Donor Alert
               System. Review each patient's chart, apply <strong className="text-foreground">Alert Logic v1.0</strong> —
               severe neurologic injury plus GCS ≤ 7 within 6 hours (or 24 hours
               if ventilated) — and route every qualifying patient to the
               <strong className="text-primary"> SHARE donor coordinator team</strong>.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Button size="lg" className="font-display text-base px-8" onClick={() => startLevel(0)}>
+            <div className="mt-6 flex flex-col gap-2.5">
+              <Button size="lg" className="font-display text-base w-full md:w-auto md:px-8 h-12" onClick={() => startLevel(0)}>
                 Begin Triage — Level 1 <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="font-display text-base px-8 bg-card/40"
+                className="font-display text-base w-full md:w-auto md:px-8 bg-card/40 h-12"
                 onClick={() => document.getElementById("levels")?.scrollIntoView({ behavior: "smooth" })}
               >
                 View Missions
@@ -176,7 +173,7 @@ export default function Home() {
                 key={level.id}
                 onClick={() => unlocked && startLevel(idx)}
                 disabled={!unlocked}
-                className={`group panel rounded-xl p-6 text-left transition-all duration-200 ${
+                className={`group panel rounded-xl p-5 text-left transition-all duration-200 active:scale-[0.98] touch-manipulation ${
                   unlocked
                     ? "hover:border-primary/60 hover:bg-card"
                     : "opacity-50 cursor-not-allowed"

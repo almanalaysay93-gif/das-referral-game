@@ -14,7 +14,7 @@ export default function Briefing() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="slide-in max-w-2xl w-full">
-        <div className="panel rounded-xl p-8 md:p-10 border-t-2 border-t-primary">
+        <div className="panel rounded-xl p-6 md:p-10 border-t-2 border-t-primary">
           <div className="flex items-center gap-2 font-telemetry text-xs uppercase tracking-[0.25em] text-telemetry">
             <Target className="h-3.5 w-3.5" /> Pre-Shift Briefing
           </div>
@@ -40,13 +40,13 @@ export default function Briefing() {
             </div>
           </div>
 
-          <div className="mt-8 flex gap-3">
-            <Button variant="outline" onClick={goToHome} className="flex-1 bg-card/40">
+          <div className="mt-8 flex flex-col-reverse sm:flex-row gap-3">
+            <Button variant="outline" onClick={goToHome} className="flex-1 bg-card/40 h-11">
               <ArrowLeft className="mr-1 h-4 w-4" /> Back to Console
             </Button>
             <Button
               size="lg"
-              className="flex-[2] font-display"
+              className="flex-[2] font-display h-12"
               onClick={() => beginShift()}
             >
               Begin Shift — Patient 1 <ArrowRight className="ml-1 h-4 w-4" />
