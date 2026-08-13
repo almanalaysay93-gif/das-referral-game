@@ -5,9 +5,8 @@ import type { Engine } from "@babylonjs/core/Engines/engine";
 import { Scene } from "@babylonjs/core/scene";
 import { Color4 } from "@babylonjs/core/Maths/math.color";
 import "@babylonjs/core/Materials/standardMaterial";
-// Side-effect imports register shader includes (clipPlane / fog / alphaTest) that
-// StandardMaterial's ALPHATEST path #include<>s. Without these, ProcessIncludes
-// leaves raw `#include<...>` in the GLSL -> "'<': syntax error" -> blank scene.
+import "@babylonjs/core/Shaders/default.vertex";
+import "@babylonjs/core/Shaders/standard.fragment";
 import "@babylonjs/core/Shaders/ShadersInclude/clipPlaneVertexDeclaration";
 import "@babylonjs/core/Shaders/ShadersInclude/clipPlaneVertex";
 import "@babylonjs/core/Shaders/ShadersInclude/clipPlaneFragmentDeclaration";

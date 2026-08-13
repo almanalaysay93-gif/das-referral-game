@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { levels, type Action, type Patient } from "@/lib/patients";
 import type { TriageBridge, TriagePayload } from "@/game/types";
 import { Heart, Activity, Wind, ShieldCheck, AlertTriangle, Brain, Stethoscope, X } from "lucide-react";
+import { useGame } from "@/contexts/GameContext";
 
 const SCORE_KEY = "das-adv-scores";
 
@@ -32,6 +33,7 @@ function saveScores(scores: number[]) {
 }
 
 export default function Adventure() {
+  const { playerInfo, logShiftScore } = useGame();
   const [searchParams] = useSearchParams();
   const [, navigate] = useLocation();
   const levelIndex = Math.min(
@@ -104,6 +106,7 @@ export default function Adventure() {
       const scores = loadScores();
       scores[levelIndex] = Math.max(scores[levelIndex] ?? 0, c.score);
       saveScores(scores);
+      logShiftScore(c.score, c.total, c.streak);
     },
     onTelemetry: (t) => setHud(t),
     dialogOpen: () => dialogOpenRef.current,
@@ -337,7 +340,7 @@ export default function Adventure() {
               <Button variant="outline" onClick={abort} className="flex-1 border-cyan-900 text-cyan-200">
                 Back to Console
               </Button>
-              {complete.score >= 6 && levelIndex < levels.length - 1 && (
+              {levelIndex < levels.length - 1 && (
                 <Button
                   onClick={() => navigate(`/adventure?level=${levelIndex + 1}`)}
                   className="flex-1 bg-amber-500 font-semibold text-slate-950 hover:bg-amber-400"

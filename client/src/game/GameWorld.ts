@@ -5,6 +5,7 @@
 
 import { Scene } from "@babylonjs/core/scene";
 import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera";
+import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Color4 } from "@babylonjs/core/Maths/math.color";
 import type { Level, Action } from "@/lib/patients";
@@ -13,7 +14,7 @@ import { LevelBuilder } from "./LevelBuilder";
 import { InputManager } from "./InputManager";
 import type { SceneOptions, TriageBridge } from "./types";
 
-const TRIGGER_DIST = 3.2; // half-width distance to a bed to enter triage
+const TRIGGER_DIST = 2.1; // must stand beside active patient's rendered bed
 const CAMERA_OFFSET_Y = 5.5;
 
 export class GameWorld {
@@ -56,10 +57,14 @@ export class GameWorld {
     this.camera.attachControl(scene.getEngine().getRenderingCanvas()!, false);
     scene.clearColor = new Color4(0.05, 0.08, 0.12, 1);
 
+    // --- Light ---
+    const light = new HemisphericLight("ambientLight", new Vector3(0, 1, 0), scene);
+    light.intensity = 1.0;
+
     // --- Level + player ---
     this.level = new LevelBuilder(scene, level, { tintHue: opts.tintHue, useTextures: true });
-    const startX = 8; // doctor visible centered in the first frame
-    this.player = new Player(scene, this.level.floors, startX, 0);
+    const startX = 2; // before first bed, so Case 1 opens only on approach
+    this.player = new Player(scene, this.level.floors, startX, this.level.floorY);
 
     // --- Input ---
     this.input = new InputManager();
@@ -177,7 +182,7 @@ export class GameWorld {
   }
 
   restart() {
-    const start = 8;
+    const start = 2;
     this.player.reset(start);
     this.activeBed = 0;
     this.currentNear = null;

@@ -1,6 +1,6 @@
 /**
  * EMR-DAS Referral Game — Game state context
- * Mission Control style: manages progress, scoring, and persistence.
+ * Mission Control style: manages progress, player registration, scoring, and Google Sheets logging.
  */
 import {
   createContext,
@@ -15,6 +15,26 @@ import { levels } from "@/lib/patients";
 
 export type Screen = "home" | "briefing" | "game" | "result";
 
+export interface PlayerInfo {
+  fullName: string;
+  profession: string;
+  sheetsWebhookUrl?: string;
+}
+
+export interface ScoreLogEntry {
+  id: string;
+  timestamp: string;
+  fullName: string;
+  profession: string;
+  levelIndex: number;
+  levelName: string;
+  score: number;
+  total: number;
+  percentage: number;
+  streak: number;
+  syncedToSheets: boolean;
+}
+
 interface AnswerRecord {
   patientId: string;
   correct: boolean;
@@ -27,9 +47,11 @@ interface GameState {
   patientIndex: number;
   answers: AnswerRecord[];
   bestScores: Record<number, { score: number; total: number }>;
+  playerInfo: PlayerInfo;
 }
 
 const STORAGE_KEY = "das-referral-game:v1";
+const PLAYER_KEY = "das-referral-player:v1";
 
 interface GameContextValue extends GameState {
   startLevel: (levelIndex: number) => void;
@@ -39,22 +61,38 @@ interface GameContextValue extends GameState {
   endLevel: () => void;
   goToHome: () => void;
   resetProgress: () => void;
+  setPlayerInfo: (info: PlayerInfo) => void;
   currentLevel: (typeof levels)[number];
   currentPatient: (typeof levels)[number]["patients"][number];
   levelScore: number;
   streak: number;
   isLevelUnlocked: (idx: number) => boolean;
+  logShiftScore: (score: number, total: number, streak: number) => Promise<boolean>;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
 
 export function GameProvider({ children }: { children: ReactNode }) {
+  const [playerInfo, setPlayerInfoState] = useState<PlayerInfo>(() => {
+    try {
+      const raw = localStorage.getItem(PLAYER_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {
+      /* ignore */
+    }
+    return {
+      fullName: "Clinician Operator",
+      profession: "Transplant Coordinator",
+      sheetsWebhookUrl: "",
+    };
+  });
+
   const [state, setState] = useState<GameState>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as GameState;
-        return { ...parsed, screen: "home" };
+        return { ...parsed, screen: "home", playerInfo };
       }
     } catch {
       /* ignore */
@@ -65,6 +103,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       patientIndex: 0,
       answers: [],
       bestScores: {},
+      playerInfo,
     };
   });
 
@@ -76,6 +115,78 @@ export function GameProvider({ children }: { children: ReactNode }) {
       /* ignore */
     }
   }, [state]);
+
+  const setPlayerInfo = useCallback((info: PlayerInfo) => {
+    setPlayerInfoState(info);
+    setState((s) => ({ ...s, playerInfo: info }));
+    try {
+      localStorage.setItem(PLAYER_KEY, JSON.stringify(info));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const logShiftScore = useCallback(
+    async (score: number, total: number, currentStreak: number): Promise<boolean> => {
+      const level = levels[state.levelIndex];
+      const percentage = Math.round((score / Math.max(1, total)) * 100);
+
+      const entry: ScoreLogEntry = {
+        id: "log_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
+        timestamp: new Date().toISOString(),
+        fullName: playerInfo.fullName || "Clinician Operator",
+        profession: playerInfo.profession || "Transplant Coordinator",
+        levelIndex: state.levelIndex,
+        levelName: level ? level.name : `Level ${state.levelIndex + 1}`,
+        score,
+        total,
+        percentage,
+        streak: currentStreak,
+        syncedToSheets: false,
+      };
+
+      let synced = false;
+
+      // 1. Post to Google Sheets Webhook URL if provided
+      if (playerInfo.sheetsWebhookUrl && playerInfo.sheetsWebhookUrl.startsWith("http")) {
+        try {
+          await fetch(playerInfo.sheetsWebhookUrl, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              timestamp: entry.timestamp,
+              fullName: entry.fullName,
+              profession: entry.profession,
+              levelName: entry.levelName,
+              score: entry.score,
+              total: entry.total,
+              percentage: entry.percentage + "%",
+              streak: entry.streak,
+            }),
+          });
+          synced = true;
+        } catch (err) {
+          console.warn("Google Sheets Webhook log error:", err);
+        }
+      }
+
+      entry.syncedToSheets = synced;
+
+      // 2. Persist locally to shift log history
+      try {
+        const rawLogs = localStorage.getItem("das-referral-score-logs");
+        const logs: ScoreLogEntry[] = rawLogs ? JSON.parse(rawLogs) : [];
+        logs.unshift(entry);
+        localStorage.setItem("das-referral-score-logs", JSON.stringify(logs.slice(0, 100)));
+      } catch (err) {
+        console.warn("Local score log save error:", err);
+      }
+
+      return synced;
+    },
+    [state.levelIndex, playerInfo],
+  );
 
   // Support the abort (home) button in the game header
   useEffect(() => {
@@ -143,9 +254,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
       patientIndex: 0,
       answers: [],
       bestScores: {},
+      playerInfo,
     });
     localStorage.removeItem(STORAGE_KEY);
-  }, []);
+  }, [playerInfo]);
 
   const currentLevel = useMemo(() => levels[state.levelIndex], [state.levelIndex]);
   const currentPatient = useMemo(
@@ -168,17 +280,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [state.answers]);
 
   const isLevelUnlocked = useCallback(
-    (idx: number) => {
-      if (idx === 0) return true;
-      const prev = state.bestScores[idx - 1];
-      // Unlock next level when previous level scored at least 6/10
-      return !!prev && prev.score >= 6;
-    },
-    [state.bestScores],
+    (_idx: number) => true, // All levels unlocked
+    [],
   );
 
   const value: GameContextValue = {
     ...state,
+    playerInfo,
+    setPlayerInfo,
     startLevel,
     beginShift,
     submitAnswer,
@@ -191,6 +300,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     levelScore,
     streak,
     isLevelUnlocked,
+    logShiftScore,
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

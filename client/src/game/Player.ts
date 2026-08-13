@@ -1,9 +1,5 @@
 // Player.ts — kinematic doctor character for the 2D hospital platformer.
-// Style: flat mission-control sprites (teal scrubs), chibi proportions.
-// Physics: manual kinematic (gravity, AABB vs. floor segments), no physics plugin.
-// Animation: idle sprite when standing; alternates idle/run frames at ~8Hz when
-// walking, with a subtle vertical bob for life. Textures are pre-created once
-// and swapped on the material — never recreated per frame.
+// Features a smooth 7-frame walking animation cycle using Dr. Luna sprite frames.
 
 import { Scene } from "@babylonjs/core/scene";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
@@ -13,15 +9,14 @@ import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import type { InputState } from "./InputManager";
 import { ASSETS } from "./assets";
 
-export const PLAYER_W = 1.4; // world units
-export const PLAYER_H = 2.6;
+export const PLAYER_W = 2.4; // world units
+export const PLAYER_H = 4.2;
 
-const SPEED = 6.2;
+const SPEED = 6.8;
 const GRAVITY = -26;
-const JUMP_V = 11.5;
+const JUMP_V = 12.0;
 
-const ANIM_FRAME_TIME = 0.11; // seconds per walk frame (≈9fps cycle)
-const BOB_AMP = 0.09; // world units of vertical bob while walking
+const FRAME_DURATION = 0.07; // seconds per frame for a smooth ~14fps walk cycle
 
 export interface Rect {
   x: number;
@@ -38,10 +33,9 @@ export class Player {
   private vy = 0;
   private onGround = false;
   private plane: import("@babylonjs/core/Meshes").Mesh;
-  private idleTex: Texture;
-  private runTex: Texture;
-  private animT = 0;
-  private showingRun = false;
+  private walkTextures: Texture[] = [];
+  private frameIndex = 0;
+  private animTimer = 0;
   readonly yFloor: number;
 
   constructor(
@@ -54,28 +48,34 @@ export class Player {
     this.root = new TransformNode("playerRoot", scene);
     this.root.position.set(startX, yFloor + PLAYER_H / 2, 5);
 
-    // Idle frame — a child plane so we can swap textures without recreating meshes.
+    // Idle & walking frame root
     this.spriteFrame = new TransformNode("playerSprite", scene);
     this.spriteFrame.parent = this.root;
 
-    // Pre-create both textures ONCE (no Texture allocation during gameplay).
-    this.idleTex = new Texture(ASSETS.doctorIdle, scene);
-    this.idleTex.hasAlpha = true;
-    this.runTex = new Texture(ASSETS.doctorRun, scene);
-    this.runTex.hasAlpha = true;
+    // Pre-create all 7 walk cycle textures ONCE for high-performance frame swapping
+    this.walkTextures = ASSETS.doctorWalkFrames.map((url) => {
+      const tex = new Texture(url, scene);
+      tex.hasAlpha = true;
+      return tex;
+    });
 
     const mat = new StandardMaterial("playerMat", scene);
-    mat.diffuseTexture = this.idleTex;
-    mat.emissiveTexture = this.idleTex;
+    const initialTex = this.walkTextures[0];
+    mat.diffuseTexture = initialTex;
+    mat.emissiveTexture = initialTex;
+    mat.useAlphaFromDiffuseTexture = true;
     mat.emissiveColor.setAll(1);
     mat.specularColor.setAll(0);
     mat.disableLighting = true;
     mat.backFaceCulling = false;
+
     const plane = CreatePlane("playerPlane", { size: 1, updatable: true }, scene);
-    plane.scaling.set(PLAYER_W * 1.6, PLAYER_H, 1);
+    // Scaled for crisp proportion matching the hospital beds & nightstands
+    plane.scaling.set(5.2, 6.6, 1);
     plane.material = mat;
     plane.parent = this.spriteFrame;
-    plane.position.z = -0.1;
+    // Align visual feet to physics floor
+    plane.position.set(0, 1.2, -0.1);
     this.plane = plane;
   }
 
@@ -93,21 +93,26 @@ export class Player {
     this.root.position.y = this.yFloor + PLAYER_H / 2;
     this.vx = 0;
     this.vy = 0;
-    this.onGround = false;
-    this.animT = 0;
-    this.showingRun = false;
+    this.onGround = true;
+    this.animTimer = 0;
+    this.frameIndex = 0;
+    this.spriteFrame.rotation.z = 0;
+    this.setWalkFrame(0);
   }
 
   update(dt: number, input: InputState, worldMaxX: number, dialogOpen: () => boolean) {
     if (dialogOpen()) {
       this.vx = 0;
-      this.setFrame(false); // idle while talking
+      this.animTimer = 0;
+      this.frameIndex = 0;
+      this.spriteFrame.rotation.z = 0;
+      this.setWalkFrame(0);
       return;
     }
 
     const moving = input.left !== input.right;
 
-    // Horizontal
+    // Horizontal movement
     if (input.left) {
       this.vx = -SPEED;
       this.facing = -1;
@@ -128,25 +133,34 @@ export class Player {
     this.vy += GRAVITY * dt;
     if (this.vy < -20) this.vy = -20;
 
-    // Integrate
+    // Integration
     const ny = this.root.position.y + this.vy * dt;
-
-    // AABB vs floor segments
     this.root.position.x += this.vx * dt;
     this.root.position.y = ny;
     this.onGround = false;
 
+    const feetY = this.root.position.y - PLAYER_H / 2;
     const r = this.rect;
+
+    // Check collision with floors
     for (const f of this.floors) {
-      // horizontal overlap?
       if (r.x + r.w > f.x && r.x < f.x + f.w) {
-        // landing on top
-        if (this.vy <= 0 && r.y + r.h >= f.y && r.y + r.h <= f.y + f.h + this.vy * dt + 0.4) {
-          this.root.position.y = f.y + r.h / 2;
+        const floorTop = f.y;
+        if (this.vy <= 0 && feetY <= floorTop + 0.4) {
+          this.root.position.y = floorTop + PLAYER_H / 2;
           this.vy = 0;
           this.onGround = true;
+          break;
         }
       }
+    }
+
+    // Safety Floor Clamp: Character can NEVER drop below the hospital floor level
+    const minCenterY = this.yFloor + PLAYER_H / 2;
+    if (this.root.position.y < minCenterY) {
+      this.root.position.y = minCenterY;
+      this.vy = 0;
+      this.onGround = true;
     }
 
     // World bounds
@@ -154,32 +168,33 @@ export class Player {
     if (this.root.position.x < PLAYER_W / 2) this.root.position.x = PLAYER_W / 2;
     if (this.root.position.x > maxX) this.root.position.x = maxX;
 
-    // Walk animation: alternate idle/run frames at ~9fps while walking on ground
+    // Smooth 7-frame walk cycle animation + stride stepping dynamics
     if (moving && this.onGround) {
-      this.animT += dt;
-      if (this.animT >= ANIM_FRAME_TIME) {
-        this.animT = 0;
-        this.showingRun = !this.showingRun;
+      this.animTimer += dt;
+      if (this.animTimer >= FRAME_DURATION) {
+        this.animTimer = 0;
+        this.frameIndex = (this.frameIndex + 1) % this.walkTextures.length;
       }
-      // Subtle stride bob at twice the frame rate
-      this.spriteFrame.position.y = BOB_AMP * Math.sin((this.animT / ANIM_FRAME_TIME + (this.showingRun ? 0.5 : 0)) * Math.PI * 2);
+      const stepPhase = (this.animTimer / FRAME_DURATION) * Math.PI;
+      this.spriteFrame.position.y = Math.abs(Math.sin(stepPhase)) * 0.12;
+      this.spriteFrame.rotation.z = Math.sin(stepPhase) * 0.04 * this.facing;
+      this.setWalkFrame(this.frameIndex);
     } else {
-      this.showingRun = false;
+      this.animTimer = 0;
+      this.frameIndex = 0;
       this.spriteFrame.position.y = 0;
+      this.spriteFrame.rotation.z = 0;
+      this.setWalkFrame(0);
     }
-    this.setFrame(this.showingRun);
 
-    // Facing: both sprites are drawn facing right (+x), so scale.x = +facing
-    // (+1 = right, -1 = mirrored left). No negation — the texture's natural
-    // orientation is the +x direction.
     this.spriteFrame.scaling.x = this.facing;
   }
 
-  /** Swap the material texture between idle and run. Textures are pre-created. */
-  private setFrame(run: boolean) {
-    if (!this.plane || !this.plane.material) return;
+  /** Swap the material texture across the 7 walk cycle frames */
+  private setWalkFrame(index: number) {
+    if (!this.plane || !this.plane.material || !this.walkTextures[index]) return;
     const mat = this.plane.material as StandardMaterial;
-    const tex = run ? this.runTex : this.idleTex;
+    const tex = this.walkTextures[index];
     if (mat.diffuseTexture === tex) return;
     mat.diffuseTexture = tex;
     mat.emissiveTexture = tex;
