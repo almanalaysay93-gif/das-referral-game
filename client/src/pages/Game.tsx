@@ -21,9 +21,10 @@ import {
   XCircle,
 } from "lucide-react";
 import { useState } from "react";
+import { ASSETS } from "@/game/assets";
 
-const COORDINATOR = "/manus-storage/coordinator-avatar_c117fbab.png";
-const BRAIN = "/manus-storage/brain-scan_4f1a24eb.png";
+const COORDINATOR = ASSETS.doctorIdle;
+const BRAIN = ASSETS.levelBackgrounds[1];
 
 export default function Game() {
   const {
