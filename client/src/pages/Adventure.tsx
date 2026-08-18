@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useSearchParams } from "wouter";
 import GameCanvas from "@/components/GameCanvas";
+import PlayerLoginModal from "@/components/PlayerLoginModal";
 import { Button } from "@/components/ui/button";
 import { levels, type Action, type Patient } from "@/lib/patients";
 import type { TriageBridge, TriagePayload } from "@/game/types";
@@ -33,7 +34,7 @@ function saveScores(scores: number[]) {
 }
 
 export default function Adventure() {
-  const { playerInfo, logShiftScore } = useGame();
+  const { playerInfo, setPlayerInfo, logShiftScore } = useGame();
   const [searchParams] = useSearchParams();
   const [, navigate] = useLocation();
   // Fallback: wouter's hash location doesn't expose "?" query strings inside the
@@ -49,6 +50,7 @@ export default function Adventure() {
   const level = levels[levelIndex];
 
   const [phase, setPhase] = useState<Phase>("briefing");
+  const [regOpen, setRegOpen] = useState(false);
   const [hud, setHud] = useState<HUD>({ score: 0, streak: 0, bedIndex: 0, total: 10 });
   const [near, setNear] = useState<TriagePayload | null>(null);
   const [complete, setComplete] = useState<{ score: number; total: number; streak: number } | null>(null);
@@ -216,12 +218,23 @@ export default function Adventure() {
               <Button variant="outline" onClick={abort} className="flex-1 border-cyan-900 text-cyan-200">
                 Back
               </Button>
-              <Button
-                onClick={startPlay}
-                className="flex-1 bg-amber-500 font-semibold text-slate-950 hover:bg-amber-400"
-              >
-                Begin Walk
-              </Button>
+              {!playerInfo.fullName ||
+              playerInfo.fullName === "Anonymous Operator" ||
+              playerInfo.fullName === "Clinician Operator" ? (
+                <Button
+                  onClick={() => setRegOpen(true)}
+                  className="flex-1 bg-amber-500 font-semibold text-slate-950 hover:bg-amber-400"
+                >
+                  Register First
+                </Button>
+              ) : (
+                <Button
+                  onClick={startPlay}
+                  className="flex-1 bg-amber-500 font-semibold text-slate-950 hover:bg-amber-400"
+                >
+                  Begin Walk
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -419,6 +432,18 @@ export default function Adventure() {
         </div>
       )}
       {/* world handle wired via das-world-ready event (see effect above) */}
+
+      {/* Registration gate — Adventure mode requires a registered player name
+          so shift scores are logged under an identifiable operator */}
+      <PlayerLoginModal
+        open={regOpen}
+        onOpenChange={setRegOpen}
+        playerInfo={playerInfo}
+        onSave={(info) => {
+          setPlayerInfo(info);
+          setRegOpen(false);
+        }}
+      />
     </div>
   );
 }

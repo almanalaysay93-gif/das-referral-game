@@ -892,3 +892,53 @@ Remaining: commit + push to github remote, checkpoint (watch out: >1MB images in
 client/public/game-assets may fail checkpoint — earlier failure; user said STOP before
 moving them to S3 — DO NOT move them; try checkpoint and if it fails, inform user and
 leave state as-is).
+
+## Status (03:04)
+- CHECKPOINT SAVED: fa406d11 — assets compressed (<1MB each), unused source PNGs removed,
+  dist/ removed. PUBLISHING NOW WORKS (live at dasrefgame-dqpu7qh3.manus.space).
+- Lab results for all 50 patients: DONE (patients.ts + panels in Game.tsx &
+  Adventure.tsx), pushed to github (commit 382b1ed).
+- NEXT: user wants (a) LOGIN PAGE for players + (b) score/name logged to Google Sheet.
+  GameContext already has PlayerInfo (fullName/profession/sheetsWebhookUrl) with
+  persist to localStorage (PLAYER_KEY) and logShiftScore POSTs JSON to
+  sheetsWebhookUrl (mode no-cors) when provided. Existing "Shift Logs" UI button
+  already on Home.
+- Plan: new /#/login route (Login.tsx) with name + profession (+optional webhook URL)
+  form; register in App.tsx; GameContext.setPlayerInfo persists; logShiftScore already
+  posts to webhook. Also prompt player name in Adventure mode (pre-walk briefing or
+  separate entry). Google Apps Script webhook: user must provide URL — will ask.
+- GitHub remote name: `github` → https://github.com/almanalaysay93-gif/das-referral-game
+
+## Login page task state (03:06)
+DONE so far:
+- Login.tsx page created at /#/login, registered in App.tsx (Route before "/").
+- Home.tsx: hero + ward banner buttons now route unregistered players (no fullName /
+  "Anonymous Operator") to /login; registered players go to adventure.
+- Adventure.tsx: briefing "Begin Walk" becomes "Register First" for unregistered;
+  PlayerLoginModal rendered in Adventure (setPlayerInfo destructured, regOpen state).
+- PlayerLoginModal (user's own component) collects fullName/profession/
+  sheetsWebhookUrl; includes Google Apps Script setup guide + copy button (target
+  sheet ID 16d7XR_Rt22sl9xE4GBWTiVdZraNOCbONdTevq6fF7Xk).
+- logShiftScore in GameContext posts {fullName,profession,levelName,score,total,
+  percentage,streak} to webhook if set; also stores local "das-referral-score-logs"
+  (read by LeaderboardModal "Shift Logs" button in Home header).
+- TypeScript passes. Screenshot check: /login + / showed home BOTH times — the
+  wouter hash hook means /login route maps to #/login; /login worked? The first
+  screenshot was for /login but displayed home — hash location: "/login" path
+  renders at #/login only if navigate is hash-based; screenshot of "/login"
+  pre-hash does not trigger hash location match? useHashLocation listens to
+  location.hash — direct URL path "/login" is NOT parsed; only "#/login" works.
+  So the /login screenshot showed Home. VERIFY via #/login in browser or use
+  hash URL. The route still works under hash navigation (buttons navigate("/login")
+  produce #/login under wouter hash location? useLocation().navigate — wouter
+  hash location adapter appends hash, so fine at runtime.
+REMAINING: browser-verify #/login renders; checkpoint + push to github remote
+(`github`, main). Live: dasrefgame-dqpu7qh3.manus.space (auto-publish).
+
+## Verification (03:07)
+/#/login renders the full registration modal: full name, profession dropdown, Google
+Sheets webhook field with Setup Guide. Working. Note: hash-based routing means the
+login page is reached at #/login; also via the register buttons on Home and the
+"Register First" button in Adventure briefing. Login.tsx outer card behind the modal
+is partially hidden by the dialog overlay — acceptable.
+REMAINING: commit+push to github remote, checkpoint, deliver.

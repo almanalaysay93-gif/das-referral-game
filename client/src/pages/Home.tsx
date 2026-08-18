@@ -9,6 +9,7 @@ import { levels } from "@/lib/patients";
 import { ASSETS } from "@/game/assets";
 import { useState } from "react";
 import PlayerLoginModal from "@/components/PlayerLoginModal";
+export { default as LoginModal } from "@/components/PlayerLoginModal";
 import LeaderboardModal from "@/components/LeaderboardModal";
 import {
   Activity,
@@ -163,10 +164,23 @@ export default function Home() {
               <strong className="text-primary"> SHARE donor coordinator team</strong>.
             </p>
             <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
+              {(!playerInfo.fullName || playerInfo.fullName === "Anonymous Operator") ? (
+                <Button
+                  size="lg"
+                  className="font-display text-base w-full md:w-auto md:px-8 h-12 bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
+                  onClick={() => navigate("/login")}
+                >
+                  🪪 Register as Operator <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              ) : null}
               <Button
                 size="lg"
                 className="font-display text-base w-full md:w-auto md:px-8 h-12 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold"
-                onClick={() => navigate("/adventure?level=0")}
+                onClick={() =>
+                  !playerInfo.fullName || playerInfo.fullName === "Anonymous Operator"
+                    ? navigate("/login")
+                    : navigate("/adventure?level=0")
+                }
               >
                 🏥 Play 2D Hospital Platformer <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
@@ -207,10 +221,28 @@ export default function Home() {
                 then classifying each one correctly to advance to the next
                 floor.
               </p>
-              <div className="mt-5 flex gap-3">
-                <Button size="lg" className="font-display h-11" onClick={() => navigate("/adventure?level=0")}>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <Button
+                  size="lg"
+                  className="font-display h-11 w-full sm:w-auto"
+                  onClick={() =>
+                    !playerInfo.fullName || playerInfo.fullName === "Anonymous Operator"
+                      ? navigate("/login")
+                      : navigate("/adventure?level=0")
+                  }
+                >
                   Enter the Ward <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
+                {(!playerInfo.fullName || playerInfo.fullName === "Anonymous Operator") && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="font-display h-11 w-full sm:w-auto border-emerald-500/60 text-emerald-300 hover:bg-emerald-500/10"
+                    onClick={() => navigate("/login")}
+                  >
+                    🪪 Register First
+                  </Button>
+                )}
               </div>
             </div>
             <div className="hidden md:block panel rounded-lg overflow-hidden border border-border">

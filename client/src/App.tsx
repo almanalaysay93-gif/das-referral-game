@@ -8,6 +8,7 @@ import { GameProvider, useGame } from "./contexts/GameContext";
 import Briefing from "./pages/Briefing";
 import Game from "./pages/Game";
 import Home from "./pages/Home";
+import Login from "./pages/Login";
 import Adventure from "./pages/Adventure";
 import Result from "./pages/Result";
 
@@ -16,6 +17,7 @@ function Router() {
   return (
     <WouterRouter hook={useHashLocation}>
       <Switch>
+        <Route path={"/login"} component={Login} />
         <Route path={"/"}>
           {screen === "briefing" ? <Briefing /> :
            screen === "game" ? <Game /> :
