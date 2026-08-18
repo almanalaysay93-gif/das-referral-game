@@ -36,8 +36,14 @@ export default function Adventure() {
   const { playerInfo, logShiftScore } = useGame();
   const [searchParams] = useSearchParams();
   const [, navigate] = useLocation();
+  // Fallback: wouter's hash location doesn't expose "?" query strings inside the
+  // hash fragment, so parse level from the raw hash as well (e.g. /#/adventure?level=2).
+  const hashLevel = (() => {
+    const m = window.location.hash.match(/[?&]level=(\d+)/);
+    return m ? Number(m[1]) : null;
+  })();
   const levelIndex = Math.min(
-    Math.max(Number(searchParams.get("level") ?? 0), 0),
+    Math.max(Number(hashLevel ?? searchParams.get("level") ?? 0), 0),
     levels.length - 1,
   );
   const level = levels[levelIndex];

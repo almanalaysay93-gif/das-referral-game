@@ -747,3 +747,90 @@ code = doctor moving right but facing left. After my fix, idle pose faces right
 (verified 08:46 crop + 08:47 screenshot). The run-frame swap cannot be caught easily
 with screenshot timing but logic is verified in code + 9fps toggle worked before.
 Conclusion: fixes are sound; proceed to checkpoint. No further changes needed.
+
+## User GitHub updates (2026-08-18)
+User pushed 3 commits to github/main (ahead of origin/main a94ba3a):
+1. 24dad15 Feat: 2D platformer overhaul — Dr. Luna 7-frame walk cycle, sleeping
+   patient beds, unlocked levels, player registration + Google Sheets scoring backend
+   (new server/index.ts API, PlayerLoginModal, LeaderboardModal, GameContext changes)
+2. 79daf5a Deploy: GH Pages workflow + relative asset paths (deploy.yml, index.html, 404.html)
+3. 2e56d9b Fix: hash location in wouter for GH Pages subpath
+Added: many game assets in client/public/game-assets/ (binaries), package-lock.json (npm)
+CAUTION: sandbox reset — install deps via pnpm i again before running build check.
+Assets in client/public are large binaries — webdev deploy may time out (project rule says
+no images in client/public). Need to review whether their approach is compatible.
+
+## Diff review summary (pre-merge)
+User's github/main has 42 files changed:
+- Player.ts: 7-frame walk cycle (walkTextures), feet alignment offset +1.2, safety
+  floor clamp, rotation.z tilt while walking. setWalkFrame(i) cycles textures.
+- LevelBuilder.ts: per-level backgrounds ASSETS.levelBackgrounds, FLOOR_Y=-1.2,
+  continuous floor, removed tintHue, bed positions via BED_X_IN_TILE.
+- GameWorld.ts: startX=2 (before bed 1), floorY from level, hemispheric light.
+- assets.ts: NEW doctor walk frames (doctor-walk-01..07), level backgrounds,
+  patient sprites (dark/silver variants), doctor-luna sprite.
+- Home.tsx: new LOGO/HERO as inline SVG (was manus-storage URLs — those images
+  may be missing from storage now!), PlayerLoginModal + LeaderboardModal buttons.
+- GameContext.tsx: PlayerInfo, sheets webhook, logShiftScore, PLAYER_KEY.
+- server/index.ts: NEW Express server (static hosting + /api/scores +
+  /api/leaderboard + register endpoint; Google Sheets append).
+- package-lock.json added (11k lines) — project uses pnpm; keep pnpm, ignore lock.
+- deploy.yml GH Pages workflow, base="./" in vite config, index.html favicon path.
+RISK: Home references /manus-storage/hero-console_30ccc789.png and
+/manus-storage/das-logo_13aa1dbe.png which are NOT in repo — user replaced with SVG.
+Our local origin main may still reference those; user's version removed them. Good.
+MERGE PLAN: merge github/main into local main, resolve conflicts by accepting
+github/main for game/* + Home, but keep our GameCanvas.tsx/render-loop guards where
+user kept (check conflict). Then pnpm i, tsc + build, visual test, checkpoint.
+NOTE: project deploys via Manus static hosting; server/index.ts is unused by our
+deploy but user wants GH Pages hosting — fine, keep as-is.
+CAUTION: 25MB+ images in client/public may break Manus deploy (deployment timeout
+risk). Check after merge whether build/deploy tolerates them.
+
+## Merge status (2026-08-18 01:37)
+- git merge github/main into local main SUCCEEDED, no conflicts. HEAD now = 2e56d9b
+  (user's commit). git remote github added. pnpm install OK. tsc OK. pnpm run build OK.
+- Dev server restarted at https://3000-ixqhbvuct5gwqqeai8tef-543057ad.sg1.manus.computer
+- Home page renders with user's new design: inline SVG logo/hero, "Play 2D Hospital
+  Platformer" CTA, Clinician Operator + Shift Logs buttons (player registration +
+  leaderboard modals).
+- App.tsx now uses wouter useHashLocation (user's GH Pages change) → /adventure is
+  now a HASH route. Screenshot of /adventure showed Home because hash routing;
+  actual route is now like /#/adventure. Verify adventure via /#/adventure screenshot.
+- User's changes: Dr. Luna 7-frame walk cycle, per-level backgrounds, startX=2,
+  floorY=-1.2, safety floor clamp, player registration (localStorage), Google Sheets
+  scoring backend (server/index.ts), GH Pages workflow + base="./".
+- REMAINING: verify /#/adventure renders + walk flow; checkpoint merge; report to user.
+
+## Hash routing diagnosis (01:38)
+- /#/adventure renders correctly (briefing shown). The query string after hash
+  (/#/adventure?level=0) is why useSearchParams returns nothing — wouter hash location
+  does not parse "?" in the hash fragment, so level always = 0 (default). Not a crash,
+  just all level links load level 0 unless the level comes from route params.
+- Also Home's "View Missions" / classic mode: navigate() to "/adventure?level=0"
+  from home CTA still lands on adventure. Classic triage flow (/ route) worked in
+  screenshot.
+- Screenshot /#/game/1 → 404 because "game" is now screen-based at "/" route. That's
+  by design in user's rewrite (Game/Briefing/Result render at / based on GameContext
+  screen state). No action needed.
+- FIX OPTION for query-in-hash: pass level through GameContext startLevel or parse
+  hash manually. Minimal fix: in Adventure.tsx, read level from hash string manually
+  as fallback: parse window.location.hash for "level=N". Apply minimal fallback so
+  existing links work.
+
+## Root cause of level=2 404 (01:42)
+wouter useHashLocation.navigate("/adventure?level=2") produces URL:
+/app-pathname?level=2#/adventure  (search goes BEFORE the hash!)
+So currentHashLocation() reads only "#/adventure" — fine. But wouter route
+matching uses currentLocation vs pattern; pattern "/adventure" matches.
+Then why 404? Because location.search contains "?level=2" and... no.
+Actually the screenshot path /#/adventure?level=2 (query AFTER hash) is a
+different URL the screenshot tool constructed — that literal URL's hash is
+"/adventure?level=2" which DOES match... but Switch matched "/404" route instead?
+Wait — with useHashLocation, path read = "/adventure?level=2" which does NOT match
+route path "/adventure" exactly → NotFound. wouter's path doesn't strip search.
+=> Home's navigate() puts query in search (before hash) so it would match
+"/adventure" route correctly. The 404 only happens when typing query after hash.
+Conclusion: in-app navigation from Home buttons works correctly (search before
+hash). No code change strictly required; my fallback is harmless belt-and-braces.
+Verify: check Home CTA flow works (it navigates via navigate()).
