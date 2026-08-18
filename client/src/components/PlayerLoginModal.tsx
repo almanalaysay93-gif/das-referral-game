@@ -1,6 +1,7 @@
 /**
- * PlayerLoginModal.tsx — Player Registration & Google Sheets Scoring Modal
- * Allows players to set their Full Name, Profession, and optional Google Sheets Webhook URL.
+ * PlayerLoginModal.tsx — Player Registration Modal
+ * Collects the player's Full Name and Profession. Scores are logged automatically
+ * to the fixed EMR-DAS Google Sheet via the built-in webhook (no player setup).
  */
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { UserCheck, FileSpreadsheet, ShieldCheck, Copy, Check } from "lucide-react";
+import { UserCheck, FileSpreadsheet, ShieldCheck } from "lucide-react";
 import type { PlayerInfo } from "@/contexts/GameContext";
 
 interface PlayerLoginModalProps {
@@ -34,25 +35,6 @@ const PROFESSIONS = [
   "Other Specialist",
 ];
 
-const DEFAULT_SCRIPT_TEMPLATE = `function doPost(e) {
-  // Target Google Sheet: https://docs.google.com/spreadsheets/d/16d7XR_Rt22sl9xE4GBWTiVdZraNOCbONdTevq6fF7Xk/edit
-  var ss = SpreadsheetApp.openById('16d7XR_Rt22sl9xE4GBWTiVdZraNOCbONdTevq6fF7Xk');
-  var sheet = ss.getSheets()[0];
-  var data = JSON.parse(e.postData.contents);
-  sheet.appendRow([
-    new Date(),
-    data.fullName,
-    data.profession,
-    data.levelName,
-    data.score,
-    data.total,
-    data.percentage + '%',
-    data.streak
-  ]);
-  return ContentService.createTextOutput(JSON.stringify({ result: "success" }))
-    .setMimeType(ContentService.MimeType.JSON);
-}`;
-
 export default function PlayerLoginModal({
   open,
   onOpenChange,
@@ -62,10 +44,6 @@ export default function PlayerLoginModal({
   const [fullName, setFullName] = useState(playerInfo.fullName || "");
   const [profession, setProfession] = useState(playerInfo.profession || PROFESSIONS[0]);
   const [customProfession, setCustomProfession] = useState("");
-  const [webhookUrl, setWebhookUrl] = useState(playerInfo.sheetsWebhookUrl || "");
-  const [showSetupHelp, setShowSetupHelp] = useState(false);
-  const [copiedScript, setCopiedScript] = useState(false);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const finalProfession = profession === "Other Specialist" && customProfession.trim()
@@ -75,15 +53,9 @@ export default function PlayerLoginModal({
     onSave({
       fullName: fullName.trim() || "Anonymous Operator",
       profession: finalProfession,
-      sheetsWebhookUrl: webhookUrl.trim(),
+      sheetsWebhookUrl: "",
     });
     onOpenChange(false);
-  };
-
-  const handleCopyScript = () => {
-    navigator.clipboard.writeText(DEFAULT_SCRIPT_TEMPLATE);
-    setCopiedScript(true);
-    setTimeout(() => setCopiedScript(false), 2000);
   };
 
   return (
@@ -151,57 +123,10 @@ export default function PlayerLoginModal({
             </div>
           )}
 
-          {/* Google Sheets Webhook URL */}
-          <div className="space-y-1.5 border-t border-cyan-900/60 pt-3">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="webhookUrl" className="flex items-center gap-1.5 font-telemetry text-xs uppercase text-emerald-400">
-                <FileSpreadsheet className="h-3.5 w-3.5" /> Google Sheets Webhook URL (Optional)
-              </Label>
-              <button
-                type="button"
-                onClick={() => setShowSetupHelp(!showSetupHelp)}
-                className="font-telemetry text-[11px] text-amber-400 hover:underline"
-              >
-                {showSetupHelp ? "Hide Setup" : "Setup Guide"}
-              </button>
-            </div>
-            <Input
-              id="webhookUrl"
-              placeholder="https://script.google.com/macros/s/.../exec"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              className="border-cyan-800/80 bg-slate-900/90 text-xs font-mono text-emerald-300 placeholder:text-slate-600"
-            />
-            <p className="text-[11px] text-slate-400">
-              Score telemetry is automatically saved locally. Adding a Webhook URL logs scores directly to your Google Sheet!
-            </p>
-          </div>
-
-          {/* Google Apps Script Setup Guide */}
-          {showSetupHelp && (
-            <div className="rounded border border-amber-500/40 bg-amber-500/10 p-3 space-y-2 text-xs text-slate-300">
-              <div className="font-bold text-amber-300 flex items-center justify-between">
-                <span>1-Minute Google Sheet Connection Guide:</span>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCopyScript}
-                  className="h-6 px-2 text-[10px] border-amber-500/60 text-amber-300 hover:bg-amber-500/20"
-                >
-                  {copiedScript ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
-                  {copiedScript ? "Copied Script" : "Copy Apps Script"}
-                </Button>
-              </div>
-              <ol className="list-decimal list-inside space-y-1 text-[11px]">
-                <li>Open a new or existing <strong>Google Sheet</strong>.</li>
-                <li>Go to <strong>Extensions → Apps Script</strong>.</li>
-                <li>Paste the copied Apps Script code into <code className="text-amber-200">Code.gs</code>.</li>
-                <li>Click <strong>Deploy → New Deployment</strong> (Select <em>Web App</em>, set <em>Anyone</em> has access).</li>
-                <li>Copy the resulting Web App URL and paste it into the input box above!</li>
-              </ol>
-            </div>
-          )}
+          <p className="flex items-center gap-1.5 rounded border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-300">
+            <FileSpreadsheet className="h-3.5 w-3.5 shrink-0" />
+            Scores are logged automatically to the EMR-DAS scores sheet — no setup required.
+          </p>
 
           <div className="flex gap-2 pt-2">
             <Button
