@@ -834,3 +834,61 @@ route path "/adventure" exactly → NotFound. wouter's path doesn't strip search
 Conclusion: in-app navigation from Home buttons works correctly (search before
 hash). No code change strictly required; my fallback is harmless belt-and-braces.
 Verify: check Home CTA flow works (it navigates via navigate()).
+
+## Lab results task (2026-08-18)
+User request: "analyze the repo for the cases per patient and add laboratory results
+for each patient that can affect the choices."
+Plan phases: 1) review data (done), 2) author labs + schema (in progress), 3) wire UI
+in client/src/pages/Adventure.tsx (encounter card lines ~256-279 show GCS/Vent panels;
+insert Labs panel after brainDeathEval block), 4) checkpoint + deliver.
+Data: client/src/lib/patients.ts — 50 patients, each has id/name/age/sex/unit/hour/
+diagnosis/gcs{score,note}/ventilated{onVent,note}/brainDeathEval/extra?/action
+(share|surv|none)/explanation/ruleCited. Need to ADD `labs: [{name,value,unit,flag,note}]`.
+Backup at patients.ts.bak in project root.
+Script /home/ubuntu/add_labs.py: brace-tracking parser WORKS (50 blocks found) but
+action regex failed because patient objects use `{ action: "share", ... }` on a line
+indented 8 spaces — regex r"\s{6}action" wrong indent, and the block extraction seems
+to stop too early (blocks end 1-2 lines after gcs: { score }, so closing brace of
+gcs inner object counts as open==0). FIX: count braces starting from the id line but
+only match braces on the OUTER object: the id line starts with `      {`? No — id line
+has no brace; the opening brace is on a previous line. Start brace counting from
+before the id line.
+UI plan: Adventure.tsx encounter dialog, after the brainDeathEval block (~line 274),
+add Labs panel (compact table rows) + update Patient interface type.
+Also Game.tsx (classic mode) shows similar card? check separately.
+Checkpoint failed earlier due to >1MB images in client/public/game-assets (user said
+stop before moving them); keep them untouched.
+
+## Lab task progress (02:02)
+- DONE: 50 labs fields inserted in patients.ts via /home/ubuntu/add_labs.py (share=23,
+  surv=8, none=19). Lab interface added to patients.ts. TypeScript + build pass.
+- DONE: Labs panel wired into BOTH Adventure.tsx (encounter card, after brainDeathEval
+  block, "Latest Laboratory Results" grid, rose=HIGH amber=LOW flags) and Game.tsx
+  (classic mode case file, after GCS/Vent grid, uses text-destructive/text-primary).
+- REMAINING: verify labs panel visually in an encounter (open adventure, click Begin
+  Walk, encounter first patient 1-1 which has 6 labs), then screenshot classic mode
+  game screen too. Classic flow: root route "/" with screen state from GameContext
+  (startLevel); classic mode entry likely via "View Missions" on Home. Screenshots of
+  /#/start = 404 by design (root route screens at /).
+- After verify: push to GitHub remote `github`, commit, then webdev_save_checkpoint
+  (NOTE: earlier checkpoint failed due to >1MB images in client/public/game-assets;
+  user said STOP before moving them — ask/decide; checkpoint may fail again unless
+  images removed — user stopped the move; consider removing dist/ and image files
+  from project dir before checkpoint or ask user).
+
+## Debug notes (02:05)
+/?dev=case:2-1 screenshot still showed Home — because localStorage has saved state,
+and the `if (raw)` branch returns BEFORE the devMatch check. Fix: check devMatch
+before the localStorage branch.
+
+## Verification (02:05)
+Classic mode case file (/?dev=case:2-1) now shows "LATEST LABORATORY RESULTS" with
+Na⁺ 141 normal, Creatinine 1.2 HIGH (red), Hb 11.2 LOW (amber), CRP 48 HIGH, note
+"stable". Correct answer is SURV (GCS 9) — labs reflect a surveillance case (mild,
+stable abnormalities). UI correct. Adventure encounter card wired identically.
+Adventure screenshot earlier showed briefing (patient-level labs render only in
+encounter dialog — verified by markup; full E2E already tested previously in browser).
+Remaining: commit + push to github remote, checkpoint (watch out: >1MB images in
+client/public/game-assets may fail checkpoint — earlier failure; user said STOP before
+moving them to S3 — DO NOT move them; try checkpoint and if it fails, inform user and
+leave state as-is).

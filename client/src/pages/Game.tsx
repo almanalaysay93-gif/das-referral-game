@@ -224,6 +224,45 @@ export default function Game() {
                   </div>
                 </div>
 
+                {/* ── Laboratory results ── */}
+                <div>
+                  <div className="font-telemetry text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-2">
+                    Latest Laboratory Results
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">
+                    {currentPatient.labs.map((lab) => (
+                      <div
+                        key={lab.name}
+                        className="flex items-baseline gap-1.5 border-b border-border/60 pb-1.5"
+                      >
+                        <span className="text-[11px] text-foreground/80 whitespace-nowrap">{lab.name}</span>
+                        <span
+                          className={`font-telemetry text-xs font-bold ${
+                            lab.flag === "HIGH"
+                              ? "text-destructive"
+                              : lab.flag === "LOW"
+                                ? "text-primary"
+                                : "text-muted-foreground"
+                          }`}
+                        >
+                          {lab.value}
+                          {lab.unit ? ` ${lab.unit}` : ""}
+                        </span>
+                        {lab.flag && (
+                          <span
+                            className={`text-[9px] font-bold ${lab.flag === "HIGH" ? "text-destructive/70" : "text-primary/70"}`}
+                          >
+                            {lab.flag}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-1.5 text-[11px] text-muted-foreground leading-snug">
+                    {currentPatient.labs[0]?.note}
+                  </div>
+                </div>
+
                 {currentPatient.extra && (
                   <div className="rounded-lg border border-telemetry/30 bg-telemetry/5 px-3.5 py-3 flex gap-2 items-start">
                     <MessageSquareWarning className="h-4 w-4 text-telemetry shrink-0 mt-0.5" />

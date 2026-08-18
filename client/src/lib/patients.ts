@@ -30,6 +30,20 @@
 
 export type Action = "share" | "surv" | "none";
 
+/**
+ * Laboratory result shown on the patient encounter card.
+ * flag "HIGH" / "LOW" renders an abnormal marker; "" = within range.
+ * `note` explains the result in one short clinical phrase and may influence
+ * the triage call (e.g. coagulopathy in ICH, ketones cleared in DKA).
+ */
+export interface Lab {
+  name: string; // e.g. "Na⁺", "Creatinine", "Troponin I"
+  value: string; // e.g. "149"
+  unit: string; // e.g. "mmol/L" (empty when unitless, e.g. INR, pH)
+  flag: "HIGH" | "LOW" | "";
+  note: string;
+}
+
 export interface Patient {
   id: string;
   name: string;
@@ -47,6 +61,7 @@ export interface Patient {
     note: string;
   };
   brainDeathEval: boolean;
+  labs: Lab[];
   extra?: string;
   action: Action;
   explanation: string;
@@ -80,6 +95,14 @@ export const levels: Level[] = [
         gcs: { score: 5, note: "E1 V2 M2 — documented 4 hours ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "149", unit: "mmol/L", flag: "HIGH", note: "rising sodium trend since admission" },
+      { name: "INR", value: "1.8", unit: "", flag: "HIGH", note: "up from 1.1 yesterday" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Classic EMR-DAS Alert Logic v1.0 trigger: a severe acute neurologic injury (intracerebral hemorrhage) plus a documented GCS of 5 (≤ 7) within the past 6 hours. This encounter is referral-alert positive — notify the SHARE Donor Coordinator for validation.",
@@ -96,6 +119,11 @@ export const levels: Level[] = [
         gcs: { score: 15, note: "Fully awake and oriented" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No alert. The patient has a mild head injury with a GCS of 15 — far above the ≤ 7 threshold and no severe acute neurologic source term. Continue routine care.",
@@ -112,6 +140,14 @@ export const levels: Level[] = [
         gcs: { score: 6, note: "E1 V1t M4 — documented 2 hours ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "149", unit: "mmol/L", flag: "HIGH", note: "rising sodium trend since admission" },
+      { name: "INR", value: "1.8", unit: "", flag: "HIGH", note: "up from 1.1 yesterday" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: severe neurologic injury (massive hemispheric infarct) plus GCS 6 (≤ 7) documented within the past 6 hours. Alert the SHARE coordinator.",
@@ -128,6 +164,10 @@ export const levels: Level[] = [
         gcs: { score: 14, note: "Alert, mildly confused" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Glucose", value: "310", unit: "mg/dL", flag: "HIGH", note: "insulin protocol active" },
+      { name: "BHB", value: "0.2", unit: "mmol/L", flag: "", note: "ketones cleared" },
+    ],
         action: "none",
         explanation:
           "No alert. This is a purely metabolic emergency with no acute neurologic injury source term, and GCS is 14. EMR-DAS alerts require a neurologic source term.",
@@ -144,6 +184,14 @@ export const levels: Level[] = [
         gcs: { score: 4, note: "E1 V1t M3 — documented 1 hour ago" },
         ventilated: { onVent: true, note: "Intubated in ER" },
         brainDeathEval: false,
+    labs: [
+      { name: "INR", value: "1.7", unit: "", flag: "HIGH", note: "up from 1.0 yesterday" },
+      { name: "Lactate", value: "4.2", unit: "mmol/L", flag: "HIGH", note: "tissue hypoperfusion" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: severe TBI (a qualifying neurologic source term) with GCS 4 (≤ 7) within 6 hours. Refer to the SHARE team for coordinator validation.",
@@ -160,6 +208,10 @@ export const levels: Level[] = [
         gcs: { score: 15, note: "Fully oriented" },
         ventilated: { onVent: false, note: "On nasal cannula only" },
         brainDeathEval: false,
+    labs: [
+      { name: "WBC", value: "12.1", unit: "10⁹/L", flag: "HIGH", note: "resolving on day-3 antibiotics" },
+      { name: "ABG pCO₂", value: "52", unit: "mmHg", flag: "HIGH", note: "chronic retainer, baseline" },
+    ],
         action: "none",
         explanation:
           "No alert. Stable respiratory infection, no neurologic injury, GCS 15. Continue specialty care.",
@@ -176,6 +228,14 @@ export const levels: Level[] = [
         gcs: { score: 3, note: "E1 V1t M1 — documented 5 hours ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "149", unit: "mmol/L", flag: "HIGH", note: "rising sodium trend since admission" },
+      { name: "INR", value: "1.8", unit: "", flag: "HIGH", note: "up from 1.1 yesterday" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: ruptured SAH is a severe neurologic source term, and GCS 3 (≤ 7) was documented 5 hours ago, within the 6-hour window. Refer to SHARE immediately.",
@@ -192,6 +252,11 @@ export const levels: Level[] = [
         gcs: { score: 15, note: "Ambulating, tolerating diet" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No alert. Routine postoperative patient with no neurologic injury and normal GCS.",
@@ -208,6 +273,14 @@ export const levels: Level[] = [
         gcs: { score: 7, note: "E2 V1t M4 — documented 3 hours ago" },
         ventilated: { onVent: true, note: "Airway protected, ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "149", unit: "mmol/L", flag: "HIGH", note: "rising sodium trend since admission" },
+      { name: "INR", value: "1.8", unit: "", flag: "HIGH", note: "up from 1.1 yesterday" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: GCS of exactly 7 (≤ 7) with a qualifying cerebellar hemorrhage, documented 3 hours ago. Note: GCS ≤ 7, not GCS < 7 — 7 qualifies. Alert SHARE.",
@@ -224,6 +297,10 @@ export const levels: Level[] = [
         gcs: { score: 15, note: "Fully conscious, pain-limited movement" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Hb", value: "11.8", unit: "g/dL", flag: "LOW", note: "post-op, stable" },
+      { name: "CRP", value: "62", unit: "mg/L", flag: "HIGH", note: "expected post-surgical" },
+    ],
         action: "none",
         explanation:
           "No alert. Orthopedic case, no neurologic injury, GCS 15. Continue routine orthopedic care.",
@@ -250,6 +327,12 @@ export const levels: Level[] = [
         gcs: { score: 9, note: "E3 V4 M2 — documented 2 hours ago" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "141", unit: "mmol/L", flag: "", note: "stable" },
+      { name: "Creatinine", value: "1.2", unit: "mg/dL", flag: "HIGH", note: "mild bump from 0.9, trending" },
+      { name: "Hb", value: "11.2", unit: "g/dL", flag: "LOW", note: "mild anemia of chronic disease" },
+      { name: "CRP", value: "48", unit: "mg/L", flag: "HIGH", note: "inflammatory marker, stable" },
+    ],
         action: "surv",
         explanation:
           "No alert yet, but the patient is in the surveillance cohort: acute neurologic injury with GCS 9 (≤ 12). Monitor closely — if GCS falls to 7 or below within 6 hours, trigger the SHARE referral.",
@@ -266,6 +349,14 @@ export const levels: Level[] = [
         gcs: { score: 7, note: "E2 V1t M4 — documented 5 hours ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "149", unit: "mmol/L", flag: "HIGH", note: "rising sodium trend since admission" },
+      { name: "INR", value: "1.8", unit: "", flag: "HIGH", note: "up from 1.1 yesterday" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: qualifying hemorrhage plus GCS 7 (≤ 7) within the 6-hour window, whether or not ventilated. Refer to SHARE.",
@@ -282,6 +373,11 @@ export const levels: Level[] = [
         gcs: { score: 12, note: "Groggy from antihistamines, no focal deficit" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No alert. Although GCS is 12, there is no acute neurologic injury source term — the drowsiness is medication-related. No EMR-DAS trigger applies.",
@@ -298,6 +394,12 @@ export const levels: Level[] = [
         gcs: { score: 8, note: "E2 V1t M5 — documented 4 hours ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "141", unit: "mmol/L", flag: "", note: "stable" },
+      { name: "Creatinine", value: "1.2", unit: "mg/dL", flag: "HIGH", note: "mild bump from 0.9, trending" },
+      { name: "Hb", value: "11.2", unit: "g/dL", flag: "LOW", note: "mild anemia of chronic disease" },
+      { name: "CRP", value: "48", unit: "mg/L", flag: "HIGH", note: "inflammatory marker, stable" },
+    ],
         action: "surv",
         explanation:
           "Surveillance, no alert yet: GCS 8 is above the ≤ 7 threshold. The patient is in the GCS ≤ 12 surveillance cohort with a serious neurologic injury — deterioration to GCS 7 would trigger an immediate referral.",
@@ -314,6 +416,14 @@ export const levels: Level[] = [
         gcs: { score: 6, note: "E1 V1t M5 — documented 3 hours ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "INR", value: "1.7", unit: "", flag: "HIGH", note: "up from 1.0 yesterday" },
+      { name: "Lactate", value: "4.2", unit: "mmol/L", flag: "HIGH", note: "tissue hypoperfusion" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: anoxic (hypoxic-ischemic) brain injury is a qualifying severe neurologic source term, and GCS 6 (≤ 7) is documented within 6 hours. Alert SHARE.",
@@ -330,6 +440,11 @@ export const levels: Level[] = [
         gcs: { score: 13, note: "Mild sedation effect, improving" },
         ventilated: { onVent: false, note: "BiPAP only, non-invasive" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No alert. GCS 13 is above the surveillance threshold, non-invasive ventilation does not count as invasive mechanical ventilation, and there is no neurologic injury.",
@@ -346,6 +461,14 @@ export const levels: Level[] = [
         gcs: { score: 3, note: "E1 V1t M1 — documented 30 minutes ago" },
         ventilated: { onVent: true, note: "Intubated on arrival" },
         brainDeathEval: false,
+    labs: [
+      { name: "INR", value: "1.7", unit: "", flag: "HIGH", note: "up from 1.0 yesterday" },
+      { name: "Lactate", value: "4.2", unit: "mmol/L", flag: "HIGH", note: "tissue hypoperfusion" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: devastating neurologic trauma with GCS 3 within 6 hours. This is one of the highest-urgency referral cases. Alert SHARE now.",
@@ -362,6 +485,10 @@ export const levels: Level[] = [
         gcs: { score: 14, note: "Fatigued but oriented" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Troponin I", value: "6.8", unit: "ng/mL", flag: "HIGH", note: "cardiac, not a neurologic alert" },
+      { name: "BNP", value: "1250", unit: "pg/mL", flag: "HIGH", note: "cardiology is the primary team" },
+    ],
         action: "none",
         explanation:
           "No alert. Cardiac patient with no neurologic injury and GCS 14. No trigger criteria met.",
@@ -378,6 +505,14 @@ export const levels: Level[] = [
         gcs: { score: 7, note: "E1 V2 M4 — documented 1 hour ago" },
         ventilated: { onVent: false, note: "Not yet ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "149", unit: "mmol/L", flag: "HIGH", note: "rising sodium trend since admission" },
+      { name: "INR", value: "1.8", unit: "", flag: "HIGH", note: "up from 1.1 yesterday" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pO₂", value: "78", unit: "mmHg", flag: "LOW", note: "hypoxemia on room air" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: the 6-hour GCS rule applies regardless of ventilation. GCS 7 (≤ 7) documented 1 hour ago with a qualifying infarct — refer to SHARE.",
@@ -394,6 +529,11 @@ export const levels: Level[] = [
         gcs: { score: 10, note: "Drowsy post-ictal state, no structural lesion on CT" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No alert. A post-ictal seizure without a structural lesion does not match Alert Logic v1.0's curated neurologic-injury source terms. Drowsiness is medication/seizure-related and expected to clear — document and reassess, but no EMR-DAS trigger applies.",
@@ -420,6 +560,14 @@ export const levels: Level[] = [
         gcs: { score: 6, note: "E1 V1t M5 — documented 18 hours ago (still current)" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "149", unit: "mmol/L", flag: "HIGH", note: "rising sodium trend since admission" },
+      { name: "INR", value: "1.8", unit: "", flag: "HIGH", note: "up from 1.1 yesterday" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: brainstem (pontine) hemorrhage plus GCS 6 within 24 hours in an invasively ventilated patient — the 24-hour rule applies. Refer to SHARE.",
@@ -436,6 +584,10 @@ export const levels: Level[] = [
         gcs: { score: 6, note: "Deep sedation for ARDS protocol" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "WBC", value: "12.1", unit: "10⁹/L", flag: "HIGH", note: "resolving on day-3 antibiotics" },
+      { name: "ABG pCO₂", value: "52", unit: "mmHg", flag: "HIGH", note: "chronic retainer, baseline" },
+    ],
         action: "none",
         explanation:
           "No alert. Although GCS is 6 on the vent, the coma is iatrogenic (deep sedation) and there is NO severe acute neurologic injury source term. Alert Logic v1.0 requires both components.",
@@ -452,6 +604,12 @@ export const levels: Level[] = [
         gcs: { score: 8, note: "E2 V1t M5 — documented 20 hours ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "141", unit: "mmol/L", flag: "", note: "stable" },
+      { name: "Creatinine", value: "1.2", unit: "mg/dL", flag: "HIGH", note: "mild bump from 0.9, trending" },
+      { name: "Hb", value: "11.2", unit: "g/dL", flag: "LOW", note: "mild anemia of chronic disease" },
+      { name: "CRP", value: "48", unit: "mg/L", flag: "HIGH", note: "inflammatory marker, stable" },
+    ],
         action: "surv",
         explanation:
           "Surveillance: ventilated patient, but the documented GCS is 8 (> 7) within the 24-hour window. Mechanical ventilation alone does not trigger an alert. Continue close monitoring.",
@@ -468,6 +626,14 @@ export const levels: Level[] = [
         gcs: { score: 5, note: "E1 V1t M4 — documented 22 hours ago (latest documented score)" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation, day 2" },
         brainDeathEval: false,
+    labs: [
+      { name: "INR", value: "1.7", unit: "", flag: "HIGH", note: "up from 1.0 yesterday" },
+      { name: "Lactate", value: "4.2", unit: "mmol/L", flag: "HIGH", note: "tissue hypoperfusion" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: severe neurologic injury plus GCS 5 documented within the 24-hour window for a ventilated patient. Refer to SHARE.",
@@ -484,6 +650,11 @@ export const levels: Level[] = [
         gcs: { score: 15, note: "Fully awake — paralysis is peripheral, not cerebral" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No alert. The patient is ventilated but has normal GCS (15) and no central neurologic injury — GBS is a peripheral nerve disease. Ventilation alone never triggers the alert.",
@@ -500,6 +671,14 @@ export const levels: Level[] = [
         gcs: { score: 6, note: "E1 V1t M5 — documented 12 hours ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "INR", value: "1.7", unit: "", flag: "HIGH", note: "up from 1.0 yesterday" },
+      { name: "Lactate", value: "4.2", unit: "mmol/L", flag: "HIGH", note: "tissue hypoperfusion" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: meningoencephalitis with cerebral edema is a qualifying acute neurologic injury, and GCS 6 was documented 12 hours ago — within the 24-hour ventilated window (and also within 6 hours). Alert SHARE.",
@@ -516,6 +695,10 @@ export const levels: Level[] = [
         gcs: { score: 14, note: "Waking up, follows commands" },
         ventilated: { onVent: true, note: "Ventilated, expected extubation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Troponin I", value: "6.8", unit: "ng/mL", flag: "HIGH", note: "cardiac, not a neurologic alert" },
+      { name: "BNP", value: "1250", unit: "pg/mL", flag: "HIGH", note: "cardiology is the primary team" },
+    ],
         action: "none",
         explanation:
           "No alert. Postoperative cardiac patient on a ventilator with GCS 14 and no neurologic injury. Continue routine care.",
@@ -532,6 +715,14 @@ export const levels: Level[] = [
         gcs: { score: 4, note: "E1 V1t M3 — documented 2 hours ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "INR", value: "1.7", unit: "", flag: "HIGH", note: "up from 1.0 yesterday" },
+      { name: "Lactate", value: "4.2", unit: "mmol/L", flag: "HIGH", note: "tissue hypoperfusion" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: devastating cerebral injury with GCS 4 within both the 6-hour and 24-hour windows. This is a top-priority referral. Alert SHARE immediately.",
@@ -548,6 +739,14 @@ export const levels: Level[] = [
         gcs: { score: 7, note: "E1 V1t M5 — documented 16 hours ago (ongoing coma)" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation, propofol infusion" },
         brainDeathEval: false,
+    labs: [
+      { name: "INR", value: "1.7", unit: "", flag: "HIGH", note: "up from 1.0 yesterday" },
+      { name: "Lactate", value: "4.2", unit: "mmol/L", flag: "HIGH", note: "tissue hypoperfusion" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: refractory status epilepticus with cerebral edema is a qualifying neurologic injury, and GCS 7 was documented 16 hours ago — within the 24-hour ventilated window. The coma must be reassessed carefully, but the alert stands for coordinator review. Refer to SHARE.",
@@ -564,6 +763,11 @@ export const levels: Level[] = [
         gcs: { score: 5, note: "Was 5 three hours ago; now 13 after treatment" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No alert. The low GCS was transient and metabolic (hypoglycemia), now corrected to 13, with no structural neurologic injury. A recovered, non-neurologic coma does not qualify. Document and continue care.",
@@ -590,6 +794,14 @@ export const levels: Level[] = [
         gcs: { score: 3, note: "E1 V1t M1 — brain-death evaluation in progress" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: true,
+    labs: [
+      { name: "Na⁺", value: "156", unit: "mmol/L", flag: "HIGH", note: "hypernatremia — consider diabetes insipidus" },
+      { name: "ABG pH", value: "7.31", unit: "", flag: "LOW", note: "metabolic acidosis, HCO₃⁻ 16" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "HIGH-PRIORITY referral: a documented brain-death evaluation creates an urgent referral-review flag subject to coordinator confirmation. Refer to SHARE immediately — the team must initiate brain-death declaration protocols, database update, and family approach.",
@@ -606,6 +818,12 @@ export const levels: Level[] = [
         gcs: { score: 10, note: "Yesterday 19:00 GCS was 5; today re-assessed at GCS 10, improving" },
         ventilated: { onVent: true, note: "Still ventilated, neurological recovery" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "141", unit: "mmol/L", flag: "", note: "stable" },
+      { name: "Creatinine", value: "1.2", unit: "mg/dL", flag: "HIGH", note: "mild bump from 0.9, trending" },
+      { name: "Hb", value: "11.2", unit: "g/dL", flag: "LOW", note: "mild anemia of chronic disease" },
+      { name: "CRP", value: "48", unit: "mg/L", flag: "HIGH", note: "inflammatory marker, stable" },
+    ],
         action: "surv",
         explanation:
           "No new alert. The GCS 5 was documented more than 24 hours ago and the patient has since improved to GCS 10. Alerts are based on the latest documented scores — stale data that has improved should not fire. Continue surveillance while ventilated.",
@@ -623,6 +841,11 @@ export const levels: Level[] = [
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
         extra: "HIS shows: 'Coordinator disposition documented 8 hours ago: VALIDATED — REFERRAL ACCEPTED'",
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No NEW alert needed. EMR-DAS suppresses duplicate alerts when a documented coordinator disposition already exists within the prior 24 hours. The patient was already validated and accepted 8 hours ago — the SHARE team is engaged. The suppression reason is retained in the audit trail.",
@@ -639,6 +862,14 @@ export const levels: Level[] = [
         gcs: { score: 7, note: "E2 V2 M3 — documented 5 hours ago" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "149", unit: "mmol/L", flag: "HIGH", note: "rising sodium trend since admission" },
+      { name: "INR", value: "1.8", unit: "", flag: "HIGH", note: "up from 1.1 yesterday" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pO₂", value: "78", unit: "mmHg", flag: "LOW", note: "hypoxemia on room air" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: severe neurologic injury with GCS 7 (≤ 7) within 6 hours. There is no prior coordinator disposition on record, so no duplicate suppression. Alert SHARE.",
@@ -655,6 +886,14 @@ export const levels: Level[] = [
         gcs: { score: 6, note: "E1 V1t M5 — documented 4 hours ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: true,
+    labs: [
+      { name: "Na⁺", value: "156", unit: "mmol/L", flag: "HIGH", note: "hypernatremia — consider diabetes insipidus" },
+      { name: "ABG pH", value: "7.31", unit: "", flag: "LOW", note: "metabolic acidosis, HCO₃⁻ 16" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "HIGH-PRIORITY referral: brain-stem testing has been ordered (brain-death evaluation underway) in a patient meeting Alert Logic v1.0. This creates the urgent referral-review flag. SHARE must coordinate immediately.",
@@ -671,6 +910,12 @@ export const levels: Level[] = [
         gcs: { score: 9, note: "E2 V4 M3 — fluctuating over the day" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "141", unit: "mmol/L", flag: "", note: "stable" },
+      { name: "Creatinine", value: "1.2", unit: "mg/dL", flag: "HIGH", note: "mild bump from 0.9, trending" },
+      { name: "Hb", value: "11.2", unit: "g/dL", flag: "LOW", note: "mild anemia of chronic disease" },
+      { name: "CRP", value: "48", unit: "mg/L", flag: "HIGH", note: "inflammatory marker, stable" },
+    ],
         action: "surv",
         explanation:
           "Surveillance, no alert: metabolic encephalopathy with GCS 9 is in the GCS ≤ 12 monitoring cohort. No alert unless a qualifying neurologic injury appears or GCS falls to 7 or below.",
@@ -687,6 +932,14 @@ export const levels: Level[] = [
         gcs: { score: 5, note: "E1 V1t M4 — documented 1 hour ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "149", unit: "mmol/L", flag: "HIGH", note: "rising sodium trend since admission" },
+      { name: "INR", value: "1.8", unit: "", flag: "HIGH", note: "up from 1.1 yesterday" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: posterior fossa infarct with brainstem compression plus GCS 5 within 6 hours (and within the 24-hour ventilated window). Dual-pathway trigger. Alert SHARE.",
@@ -703,6 +956,12 @@ export const levels: Level[] = [
         gcs: { score: 11, note: "E3 V4 M4 — documented 1 hour ago, improving" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "141", unit: "mmol/L", flag: "", note: "stable" },
+      { name: "Creatinine", value: "1.2", unit: "mg/dL", flag: "HIGH", note: "mild bump from 0.9, trending" },
+      { name: "Hb", value: "11.2", unit: "g/dL", flag: "LOW", note: "mild anemia of chronic disease" },
+      { name: "CRP", value: "48", unit: "mg/L", flag: "HIGH", note: "inflammatory marker, stable" },
+    ],
         action: "surv",
         explanation:
           "Surveillance: GCS 11 puts the patient in the ≤ 12 monitoring cohort. No neurologic injury source term is documented yet. Investigate the cause; escalate if GCS deteriorates to 7 or below.",
@@ -719,6 +978,12 @@ export const levels: Level[] = [
         gcs: { score: 6, note: "Documented 26 hours ago; no newer documented GCS in HIS" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "141", unit: "mmol/L", flag: "", note: "stable" },
+      { name: "Creatinine", value: "1.2", unit: "mg/dL", flag: "HIGH", note: "mild bump from 0.9, trending" },
+      { name: "Hb", value: "11.2", unit: "g/dL", flag: "LOW", note: "mild anemia of chronic disease" },
+      { name: "CRP", value: "48", unit: "mg/L", flag: "HIGH", note: "inflammatory marker, stable" },
+    ],
         action: "surv",
         explanation:
           "Tricky case: the last documented GCS 6 is 26 hours old — outside the 24-hour ventilated window — and no newer score exists in the HIS. EMR-DAS triggers only on documented data within the window. This should prompt a real-time GCS re-assessment at the bedside; if the new score is ≤ 7, an alert fires. Until then: surveillance, and ask the team to chart a current GCS.",
@@ -735,6 +1000,11 @@ export const levels: Level[] = [
         gcs: { score: 6, note: "E1 V1t M5 — deep shock, documented 2 hours ago" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No alert. Although GCS is 6 on ventilation, there is no severe acute neurologic injury source term — the coma is from shock/hypoperfusion. EMR-DAS v1.0 requires the neurologic component. A false alert here would burden the coordinator queue.",
@@ -761,6 +1031,14 @@ export const levels: Level[] = [
         gcs: { score: 4, note: "E1 V1t M3 — documented 45 minutes ago" },
         ventilated: { onVent: true, note: "Intubated in ER" },
         brainDeathEval: false,
+    labs: [
+      { name: "INR", value: "1.7", unit: "", flag: "HIGH", note: "up from 1.0 yesterday" },
+      { name: "Lactate", value: "4.2", unit: "mmol/L", flag: "HIGH", note: "tissue hypoperfusion" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: severe TBI plus GCS 4 within 6 hours. Textbook trigger. Alert SHARE.",
@@ -777,6 +1055,10 @@ export const levels: Level[] = [
         gcs: { score: 15, note: "Awake and anxious on the vent" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "WBC", value: "12.1", unit: "10⁹/L", flag: "HIGH", note: "resolving on day-3 antibiotics" },
+      { name: "ABG pCO₂", value: "52", unit: "mmHg", flag: "HIGH", note: "chronic retainer, baseline" },
+    ],
         action: "none",
         explanation:
           "No alert. Ventilated but GCS 15 and no neurologic injury. Remember: ventilation alone never triggers EMR-DAS.",
@@ -793,6 +1075,14 @@ export const levels: Level[] = [
         gcs: { score: 3, note: "Brain death formally declared under hospital protocol" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: true,
+    labs: [
+      { name: "Na⁺", value: "156", unit: "mmol/L", flag: "HIGH", note: "hypernatremia — consider diabetes insipidus" },
+      { name: "ABG pH", value: "7.31", unit: "", flag: "LOW", note: "metabolic acidosis, HCO₃⁻ 16" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "HIGH-PRIORITY referral: brain death has been formally declared. The coordinator must now proceed with the donation pathway — database update, family approach, consent, and PHILNOS coordination for organ allocation. EMR-DAS doesn't declare brain death, but it must flag it instantly.",
@@ -809,6 +1099,11 @@ export const levels: Level[] = [
         gcs: { score: 14, note: "Oriented, CIWA protocol" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No alert. GCS 14, no neurologic injury. Continue withdrawal management.",
@@ -825,6 +1120,12 @@ export const levels: Level[] = [
         gcs: { score: 8, note: "E2 V3 M3 — documented 2 hours ago, was 12 yesterday" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "141", unit: "mmol/L", flag: "", note: "stable" },
+      { name: "Creatinine", value: "1.2", unit: "mg/dL", flag: "HIGH", note: "mild bump from 0.9, trending" },
+      { name: "Hb", value: "11.2", unit: "g/dL", flag: "LOW", note: "mild anemia of chronic disease" },
+      { name: "CRP", value: "48", unit: "mg/L", flag: "HIGH", note: "inflammatory marker, stable" },
+    ],
         action: "surv",
         explanation:
           "Surveillance, no alert yet: GCS 8 is one point above the threshold. Deterioration from 12 to 8 is a warning — reassess frequently, and if GCS drops to 7 or below within the next hours, trigger the alert.",
@@ -841,6 +1142,14 @@ export const levels: Level[] = [
         gcs: { score: 5, note: "E1 V1t M4 — documented 6 hours ago (targeted temperature management)" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation, TTM" },
         brainDeathEval: false,
+    labs: [
+      { name: "INR", value: "1.7", unit: "", flag: "HIGH", note: "up from 1.0 yesterday" },
+      { name: "Lactate", value: "4.2", unit: "mmol/L", flag: "HIGH", note: "tissue hypoperfusion" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: hypoxic-ischemic injury is a qualifying source term and GCS 5 was documented exactly within the 24-hour ventilated window. Coordinator validation is essential here because TTM/sedation can depress scores — but the alert must fire for review.",
@@ -857,6 +1166,11 @@ export const levels: Level[] = [
         gcs: { score: 13, note: "Improving with fluids and antibiotics" },
         ventilated: { onVent: false, note: "Not ventilated" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No alert. Mild depressed consciousness from infection/dehydration, no neurologic injury, GCS above surveillance threshold.",
@@ -874,6 +1188,14 @@ export const levels: Level[] = [
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
         extra: "HIS shows: 'Coordinator disposition 26 hours ago: REJECTED — family declined early; no current disposition'",
+    labs: [
+      { name: "Na⁺", value: "149", unit: "mmol/L", flag: "HIGH", note: "rising sodium trend since admission" },
+      { name: "INR", value: "1.8", unit: "", flag: "HIGH", note: "up from 1.1 yesterday" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: qualifying hemorrhage plus GCS 6 within 6 hours. The previous coordinator disposition is 26 hours old — beyond the 24-hour duplicate-suppression window — so a new alert is required.",
@@ -890,6 +1212,11 @@ export const levels: Level[] = [
         gcs: { score: 8, note: "E2 V1t M5 — sedated for shock management" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation, ECMO team consulted" },
         brainDeathEval: false,
+    labs: [
+      { name: "Na⁺", value: "139", unit: "mmol/L", flag: "", note: "normal" },
+      { name: "Creatinine", value: "0.9", unit: "mg/dL", flag: "", note: "normal" },
+      { name: "Hb", value: "13.4", unit: "g/dL", flag: "", note: "normal" },
+    ],
         action: "none",
         explanation:
           "No alert. Sedation-driven GCS 8 with no neurologic injury source term — a cardiac case, not a brain-injury case. This is a false-alert trap the coordinator queue must be spared from.",
@@ -906,6 +1233,14 @@ export const levels: Level[] = [
         gcs: { score: 7, note: "E2 V1t M4 — documented 20 minutes ago, down from 9 at 22:00" },
         ventilated: { onVent: true, note: "Invasive mechanical ventilation" },
         brainDeathEval: false,
+    labs: [
+      { name: "INR", value: "1.7", unit: "", flag: "HIGH", note: "up from 1.0 yesterday" },
+      { name: "Lactate", value: "4.2", unit: "mmol/L", flag: "HIGH", note: "tissue hypoperfusion" },
+      { name: "Creatinine", value: "1.9", unit: "mg/dL", flag: "HIGH", note: "AKI — was 0.9 on admission" },
+      { name: "AST", value: "210", unit: "U/L", flag: "HIGH", note: "shock liver pattern" },
+      { name: "Hb", value: "8.4", unit: "g/dL", flag: "LOW", note: "dropping, last 10.2" },
+      { name: "ABG pCO₂", value: "34", unit: "mmHg", flag: "LOW", note: "on vent, minute ventilation adjusted" },
+    ],
         action: "share",
         explanation:
           "Referral-alert positive: the SAH qualifies and the fresh GCS of 7 was documented 20 minutes ago — within both the 6-hour and 24-hour windows. Deterioration from 9 to 7 is exactly the change EMR-DAS exists to catch. Alert SHARE now.",

@@ -277,6 +277,43 @@ export default function Adventure() {
                 High-priority flag: brain-death evaluation in progress
               </div>
             )}
+            <div className="mt-3">
+              <div className="text-[10px] font-telemetry uppercase tracking-widest text-slate-400">
+                Latest Laboratory Results
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 sm:grid-cols-3">
+                {near.patient.labs.map((lab) => (
+                  <div
+                    key={lab.name}
+                    className="flex items-baseline gap-1.5 border-b border-cyan-900/40 pb-1.5"
+                  >
+                    <span className="text-[11px] text-slate-300 whitespace-nowrap">{lab.name}</span>
+                    <span
+                      className={`font-telemetry text-xs font-bold ${
+                        lab.flag === "HIGH"
+                          ? "text-rose-400"
+                          : lab.flag === "LOW"
+                            ? "text-amber-400"
+                            : "text-slate-400"
+                      }`}
+                    >
+                      {lab.value}
+                      {lab.unit ? ` ${lab.unit}` : ""}
+                    </span>
+                    {lab.flag && (
+                      <span
+                        className={`text-[9px] font-bold ${lab.flag === "HIGH" ? "text-rose-400/70" : "text-amber-400/70"}`}
+                      >
+                        {lab.flag}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-1.5 text-[11px] text-slate-400 leading-snug">
+                {near.patient.labs[0]?.note}
+              </div>
+            </div>
             <div className="mt-4 space-y-2">
               <ActionButton
                 color="amber"

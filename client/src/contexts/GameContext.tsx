@@ -88,6 +88,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
   });
 
   const [state, setState] = useState<GameState>(() => {
+    // Dev deep-link (checked first so it beats the persisted state):
+    // ?dev=case:2-1 jumps straight into classic mode at level 2, patient 1 (1-based).
+    const devMatch = window.location.search.match(/dev=case:(\d+)-(\d+)/i);
+    if (devMatch) {
+      return {
+        screen: "game",
+        levelIndex: Math.min(parseInt(devMatch[1], 10) - 1, levels.length - 1),
+        patientIndex: Math.min(parseInt(devMatch[2], 10) - 1, 9),
+        answers: [],
+        bestScores: {},
+        playerInfo,
+      };
+    }
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
