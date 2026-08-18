@@ -53,6 +53,12 @@ interface GameState {
 const STORAGE_KEY = "das-referral-game:v1";
 const PLAYER_KEY = "das-referral-player:v1";
 
+// EMR-DAS fixed scores sheet:
+// https://docs.google.com/spreadsheets/d/1PMR86sgmdW889v0YdvJDy55jKwj-VfG1-pJ7s3iGUzw
+// Once the Apps Script web app (see /google-apps-script/Code.gs in the repo)
+// is deployed, paste its public URL here:
+const SHEETS_WEBHOOK_URL = "";
+
 interface GameContextValue extends GameState {
   startLevel: (levelIndex: number) => void;
   beginShift: () => void;
@@ -160,10 +166,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
       let synced = false;
 
-      // 1. Post to Google Sheets Webhook URL if provided
-      if (playerInfo.sheetsWebhookUrl && playerInfo.sheetsWebhookUrl.startsWith("http")) {
+      // 1. Post to Google Sheets Webhook URL if provided by the player,
+      //    otherwise fall back to the fixed EMR-DAS sheet webhook
+      const webhook =
+        playerInfo.sheetsWebhookUrl && playerInfo.sheetsWebhookUrl.startsWith("http")
+          ? playerInfo.sheetsWebhookUrl
+          : SHEETS_WEBHOOK_URL;
+      if (webhook && webhook.startsWith("http")) {
         try {
-          await fetch(playerInfo.sheetsWebhookUrl, {
+          await fetch(webhook, {
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "application/json" },
