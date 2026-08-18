@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EMR-DAS Referral Game</title>
+    <script>
+      // Redirect GitHub Pages 404 to root with hash
+      (function () {
+        var base = "/das-referral-game";
+        var path = window.location.pathname;
+        var subPath = path.startsWith(base) ? path.substring(base.length) : path;
+        subPath = subPath.replace(/^\/+/, "");
+        var redirectUrl = base + "/" + (subPath ? "#/" + subPath : "") + window.location.search + window.location.hash;
+        window.location.replace(redirectUrl);
+      })();
+    </script>
+  </head>
+  <body style="background:#050b14;color:#e2e8f0;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
+    <p>Redirecting to EMR-DAS Console...</p>
+  </body>
+</html>

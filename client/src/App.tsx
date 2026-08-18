@@ -1,7 +1,8 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Router as WouterRouter, Route, Switch } from "wouter";
+import { useHashLocation } from "wouter/use-hash-location";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { GameProvider, useGame } from "./contexts/GameContext";
 import Briefing from "./pages/Briefing";
@@ -13,17 +14,19 @@ import Result from "./pages/Result";
 function Router() {
   const { screen } = useGame();
   return (
-    <Switch>
-      <Route path={"/"}>
-        {screen === "briefing" ? <Briefing /> :
-         screen === "game" ? <Game /> :
-         screen === "result" ? <Result /> :
-         <Home />}
-      </Route>
-      <Route path={"/adventure"} component={Adventure} />
-      <Route path={"/404"} component={NotFound} />
-      <Route component={NotFound} />
-    </Switch>
+    <WouterRouter hook={useHashLocation}>
+      <Switch>
+        <Route path={"/"}>
+          {screen === "briefing" ? <Briefing /> :
+           screen === "game" ? <Game /> :
+           screen === "result" ? <Result /> :
+           <Home />}
+        </Route>
+        <Route path={"/adventure"} component={Adventure} />
+        <Route path={"/404"} component={NotFound} />
+        <Route component={NotFound} />
+      </Switch>
+    </WouterRouter>
   );
 }
 
