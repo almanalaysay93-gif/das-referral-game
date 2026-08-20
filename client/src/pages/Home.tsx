@@ -179,10 +179,10 @@ export default function Home() {
                 onClick={() =>
                   !playerInfo.fullName || playerInfo.fullName === "Anonymous Operator"
                     ? navigate("/login")
-                    : navigate("/adventure?level=0")
+                    : navigate("/hospital")
                 }
               >
-                🏥 Play 2D Hospital Platformer <ArrowRight className="ml-1 h-4 w-4" />
+                🏥 Explore Hospital Wing <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
               <Button
                 size="lg"
@@ -209,17 +209,16 @@ export default function Home() {
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1.5 font-telemetry text-[10px] uppercase tracking-[0.2em] text-telemetry">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                New Mode — Platformer Training
+                Open Hospital — Platformer Training
               </div>
               <h2 className="font-display text-2xl md:text-4xl font-bold">
-                Walk the ward yourself. <span className="text-primary">Room to room.</span>
+                Explore hospital wing. <span className="text-primary">Room to room.</span>
               </h2>
               <p className="mt-2 max-w-xl text-sm md:text-base text-muted-foreground leading-relaxed">
                 The same EMR-DAS rules, a different posture: you are now the
-                doctor on the night shift, running the corridor, knocking on
-                doors, and finding every patient the alert filter flagged —
-                then classifying each one correctly to advance to the next
-                floor.
+                doctor on the night shift. Walk open training wing, reach each
+                department door, then enter its clinical level to assess every
+                patient the alert filter flagged.
               </p>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Button
@@ -228,10 +227,10 @@ export default function Home() {
                   onClick={() =>
                     !playerInfo.fullName || playerInfo.fullName === "Anonymous Operator"
                       ? navigate("/login")
-                      : navigate("/adventure?level=0")
+                      : navigate("/hospital")
                   }
                 >
-                  Enter the Ward <ArrowRight className="ml-1 h-4 w-4" />
+                  Explore Hospital <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
                 {(!playerInfo.fullName || playerInfo.fullName === "Anonymous Operator") && (
                   <Button
@@ -305,7 +304,7 @@ export default function Home() {
             return (
               <button
                 key={level.id}
-                onClick={() => unlocked && navigate(`/adventure?level=${idx}`)}
+                onClick={() => unlocked && navigate("/hospital")}
                 disabled={!unlocked}
                 className={`group panel rounded-xl p-5 text-left transition-all duration-200 active:scale-[0.98] touch-manipulation ${
                   unlocked

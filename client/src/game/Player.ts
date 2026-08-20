@@ -16,7 +16,7 @@ const SPEED = 6.8;
 const GRAVITY = -26;
 const JUMP_V = 12.0;
 
-const FRAME_DURATION = 0.07; // seconds per frame for a smooth ~14fps walk cycle
+const FRAME_DURATION = 0.09; // authored pixel-art cadence: ~11fps
 
 export interface Rect {
   x: number;
@@ -56,6 +56,7 @@ export class Player {
     this.walkTextures = ASSETS.doctorWalkFrames.map((url) => {
       const tex = new Texture(url, scene);
       tex.hasAlpha = true;
+      tex.updateSamplingMode(Texture.NEAREST_SAMPLINGMODE);
       return tex;
     });
 
@@ -77,6 +78,15 @@ export class Player {
     // Align visual feet to physics floor
     plane.position.set(0, 1.2, -0.1);
     this.plane = plane;
+  }
+
+  /** Changes rendered sprite scale only. Collision body and walk behavior stay unchanged. */
+  setVisualScale(scale: number) {
+    const safeScale = Math.min(Math.max(scale, 0.5), 1.25);
+    const visualHeight = 6.6 * safeScale;
+    this.plane.scaling.set(5.2 * safeScale, visualHeight, 1);
+    // Keep shoes on the authored physics floor after visual-only resizing.
+    this.plane.position.y = visualHeight / 2 - PLAYER_H / 2;
   }
 
   get rect(): Rect {
@@ -103,10 +113,7 @@ export class Player {
   update(dt: number, input: InputState, worldMaxX: number, dialogOpen: () => boolean) {
     if (dialogOpen()) {
       this.vx = 0;
-      this.animTimer = 0;
-      this.frameIndex = 0;
-      this.spriteFrame.rotation.z = 0;
-      this.setWalkFrame(0);
+      this.resetAnimationPose();
       return;
     }
 
@@ -168,23 +175,17 @@ export class Player {
     if (this.root.position.x < PLAYER_W / 2) this.root.position.x = PLAYER_W / 2;
     if (this.root.position.x > maxX) this.root.position.x = maxX;
 
-    // Smooth 7-frame walk cycle animation + stride stepping dynamics
+    // Sprite frames already contain foot lift, body rise, and stride. Keep the
+    // plane foot-locked instead of adding a second procedural bob/tilt.
     if (moving && this.onGround) {
       this.animTimer += dt;
-      if (this.animTimer >= FRAME_DURATION) {
-        this.animTimer = 0;
+      while (this.animTimer >= FRAME_DURATION) {
+        this.animTimer -= FRAME_DURATION;
         this.frameIndex = (this.frameIndex + 1) % this.walkTextures.length;
       }
-      const stepPhase = (this.animTimer / FRAME_DURATION) * Math.PI;
-      this.spriteFrame.position.y = Math.abs(Math.sin(stepPhase)) * 0.12;
-      this.spriteFrame.rotation.z = Math.sin(stepPhase) * 0.04 * this.facing;
       this.setWalkFrame(this.frameIndex);
     } else {
-      this.animTimer = 0;
-      this.frameIndex = 0;
-      this.spriteFrame.position.y = 0;
-      this.spriteFrame.rotation.z = 0;
-      this.setWalkFrame(0);
+      this.resetAnimationPose();
     }
 
     this.spriteFrame.scaling.x = this.facing;
@@ -198,6 +199,14 @@ export class Player {
     if (mat.diffuseTexture === tex) return;
     mat.diffuseTexture = tex;
     mat.emissiveTexture = tex;
+  }
+
+  private resetAnimationPose() {
+    this.animTimer = 0;
+    this.frameIndex = 0;
+    this.spriteFrame.position.y = 0;
+    this.spriteFrame.rotation.z = 0;
+    this.setWalkFrame(0);
   }
 
   dispose() {

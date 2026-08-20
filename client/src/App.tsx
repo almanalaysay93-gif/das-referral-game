@@ -10,6 +10,7 @@ import Game from "./pages/Game";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Adventure from "./pages/Adventure";
+import HospitalHub from "./pages/HospitalHub";
 import Result from "./pages/Result";
 
 function Router() {
@@ -25,6 +26,7 @@ function Router() {
            <Home />}
         </Route>
         <Route path={"/adventure"} component={Adventure} />
+        <Route path={"/hospital"} component={HospitalHub} />
         <Route path={"/404"} component={NotFound} />
         <Route component={NotFound} />
       </Switch>

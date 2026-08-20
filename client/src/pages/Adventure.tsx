@@ -61,6 +61,7 @@ export default function Adventure() {
   } | null>(null);
   const dialogOpenRef = useRef(false);
   const worldRef = useRef<import("@/game/GameWorld").GameWorld | null>(null);
+  const returnTimerRef = useRef<number | null>(null);
 
   // World handle arrives from the scene via the das-world-ready event
   useEffect(() => {
@@ -73,6 +74,15 @@ export default function Adventure() {
       (window as unknown as Record<string, import("@/game/GameWorld").GameWorld | undefined>)
         .__dasWorld ?? null;
     return () => window.removeEventListener("das-world-ready", handler);
+  }, []);
+
+  const returnToHospital = useCallback(() => {
+    if (returnTimerRef.current !== null) window.clearTimeout(returnTimerRef.current);
+    navigate(`/hospital?returnLevel=${levelIndex}`);
+  }, [levelIndex, navigate]);
+
+  useEffect(() => () => {
+    if (returnTimerRef.current !== null) window.clearTimeout(returnTimerRef.current);
   }, []);
 
   // Touch control handlers are supplied by the game engine via das-touch-ready
@@ -115,6 +125,7 @@ export default function Adventure() {
       scores[levelIndex] = Math.max(scores[levelIndex] ?? 0, c.score);
       saveScores(scores);
       logShiftScore(c.score, c.total, c.streak);
+      returnTimerRef.current = window.setTimeout(returnToHospital, 2500);
     },
     onTelemetry: (t) => setHud(t),
     dialogOpen: () => dialogOpenRef.current,
@@ -390,20 +401,13 @@ export default function Adventure() {
               {complete.score}<span className="text-2xl text-cyan-400">/{complete.total}</span>
             </div>
             <p className="mt-2 font-telemetry text-xs text-cyan-300">
-              Best streak: {complete.streak} · {complete.score >= 6 ? "FLOOR CLEARED" : "NOT ENOUGH TO ADVANCE"}
+              Best streak: {complete.streak} · {complete.score >= 6 ? "FLOOR CLEARED" : "SHIFT FINISHED"}
             </p>
+            <p className="mt-2 text-xs text-slate-400">Returning to hospital hall...</p>
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-              <Button variant="outline" onClick={abort} className="flex-1 border-cyan-900 text-cyan-200">
-                Back to Console
+              <Button onClick={returnToHospital} className="flex-1 bg-amber-500 font-semibold text-slate-950 hover:bg-amber-400">
+                Return to Hospital Hall
               </Button>
-              {levelIndex < levels.length - 1 && (
-                <Button
-                  onClick={() => navigate(`/adventure?level=${levelIndex + 1}`)}
-                  className="flex-1 bg-amber-500 font-semibold text-slate-950 hover:bg-amber-400"
-                >
-                  Next Floor →
-                </Button>
-              )}
               <Button
                 variant="outline"
                 onClick={() => {

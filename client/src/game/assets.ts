@@ -13,6 +13,16 @@ export const ASSETS = {
     `${BASE}/game-assets/doctor-walk-reference-v1/doctor-walk-06.png`,
     `${BASE}/game-assets/doctor-walk-reference-v1/doctor-walk-07.png`,
   ],
+  doctorWalkFrontFrames: [
+    `${BASE}/game-assets/doctor-walk-front-v1/doctor-walk-01.png`,
+    `${BASE}/game-assets/doctor-walk-front-v1/doctor-walk-02.png`,
+    `${BASE}/game-assets/doctor-walk-front-v1/doctor-walk-03.png`,
+  ],
+  doctorWalkBackFrames: [
+    `${BASE}/game-assets/doctor-walk-back-v1/doctor-walk-01.png`,
+    `${BASE}/game-assets/doctor-walk-back-v1/doctor-walk-02.png`,
+    `${BASE}/game-assets/doctor-walk-back-v1/doctor-walk-03.png`,
+  ],
   levelBackgrounds: [
     `${BASE}/game-assets/hospital-ward-patients-v2.png`,
     `${BASE}/game-assets/hospital-level-2-gcs-v1.png`,
@@ -20,6 +30,7 @@ export const ASSETS = {
     `${BASE}/game-assets/hospital-level-4-coordinator-v1.png`,
     `${BASE}/game-assets/hospital-level-5-night-v1.png`,
   ],
+  hospitalHub: `${BASE}/game-assets/hospital-open-hall-v1.png`,
   corridor: `${BASE}/game-assets/hospital-ward-patients-v2.png`,
   bedA: `${BASE}/game-assets/patient-dark-game-v1.png`,
   bedB: `${BASE}/game-assets/patient-silver-game-v1.png`,

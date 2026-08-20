@@ -6,10 +6,11 @@ export interface InputState {
   left: boolean;
   right: boolean;
   jump: boolean; // edge-triggered: true only on the frame pressed
+  interact: boolean; // edge-triggered: enters a nearby ward door
 }
 
 export class InputManager {
-  state: InputState = { left: false, right: false, jump: false };
+  state: InputState = { left: false, right: false, jump: false, interact: false };
   private jumpArmed = false; // track whether a jump press has been consumed
 
   constructor() {
@@ -36,6 +37,11 @@ export class InputManager {
           this.state.jump = true;
           this.jumpArmed = true;
         }
+        e.preventDefault();
+        break;
+      case "KeyE":
+      case "Enter":
+        this.state.interact = true;
         e.preventDefault();
         break;
     }
@@ -76,6 +82,7 @@ export class InputManager {
   /** Clear per-frame state at end of each update. */
   endFrame() {
     this.state.jump = false;
+    this.state.interact = false;
   }
 
   dispose() {
