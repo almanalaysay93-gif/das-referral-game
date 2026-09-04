@@ -6,6 +6,7 @@ import { Scene } from "@babylonjs/core/scene";
 import { Color4 } from "@babylonjs/core/Maths/math.color";
 import "@babylonjs/core/Materials/standardMaterial";
 import "@babylonjs/core/Shaders/default.vertex";
+import "@babylonjs/core/Shaders/default.fragment";
 import "@babylonjs/core/Shaders/standard.fragment";
 import "@babylonjs/core/Shaders/ShadersInclude/clipPlaneVertexDeclaration";
 import "@babylonjs/core/Shaders/ShadersInclude/clipPlaneVertex";

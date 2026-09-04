@@ -50,6 +50,11 @@ export default function Adventure() {
   const level = levels[levelIndex];
 
   const [phase, setPhase] = useState<Phase>("briefing");
+  // The Babylon world runs behind the briefing/complete overlays, and input is
+  // bound to window. Mirror the phase into a ref so the bridge can freeze the
+  // doctor whenever we are not actually playing.
+  const phaseRef = useRef<Phase>("briefing");
+  phaseRef.current = phase;
   const [regOpen, setRegOpen] = useState(false);
   const [hud, setHud] = useState<HUD>({ score: 0, streak: 0, bedIndex: 0, total: 10 });
   const [near, setNear] = useState<TriagePayload | null>(null);
@@ -108,6 +113,7 @@ export default function Adventure() {
 
   const bridge: TriageBridge = {
     onPatientNear: (p) => {
+      if (phaseRef.current !== "playing") return;
       dialogOpenRef.current = true;
       setNear(p);
       setFeedback(null);
@@ -128,10 +134,15 @@ export default function Adventure() {
       returnTimerRef.current = window.setTimeout(returnToHospital, 2500);
     },
     onTelemetry: (t) => setHud(t),
-    dialogOpen: () => dialogOpenRef.current,
+    dialogOpen: () => phaseRef.current !== "playing" || dialogOpenRef.current,
   };
 
   const startPlay = useCallback(() => {
+    // Start every walk from a clean world: bed 0 unassessed, score 0, doctor at
+    // the corridor entrance, and no stale encounter freezing the player.
+    worldRef.current?.restart();
+    dialogOpenRef.current = false;
+    phaseRef.current = "playing";
     setPhase("playing");
     setNear(null);
     setComplete(null);
